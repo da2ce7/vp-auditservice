@@ -31,7 +31,7 @@ bool MainConfigParser::parse(){
         
         po::options_description desc("Default options");
         desc.add_options()
-        ("config,c", po::value<std::string>(&configpath)->default_value("auditserver.conf"),"Configuration file, default auditserver.conf")
+        ("config,c", po::value<std::string>(&configpath)->default_value("vp-auditservice.conf"),"Configuration file, default auditserver.conf")
         ("help,h", "display this help text")
         ("version,v", "display version number")
         ;
