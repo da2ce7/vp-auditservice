@@ -1,6 +1,6 @@
 //
 //  Constants.h
-//  Auditor
+//  vp-auditservice
 //
 
 

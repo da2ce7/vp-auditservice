@@ -1,7 +1,7 @@
-Auditor
+VP-AuditService
 =======
 
-#### The code in this repository is subject to rolling changes.
+#### This document is incomplete, please visit http://opentransactions.org/wiki/index.php?title=Category:Voting_Pools for up-to-date information.
 
 Withdrawals
 =======
@@ -112,5 +112,5 @@ Related Projects
 References
 =======
 
-* [Voting Pools Whitepaper](https://docs.google.com/a/monetas.net/document/d/1aS4v4SlvwthYKo2xrAohlqZ9CqcA-9AL4atqq8P_O4c/edit?pli=1)
+* [Voting Pools Wiki](http://opentransactions.org/wiki/index.php?title=Category:Voting_Pools)
 

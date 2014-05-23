@@ -1,7 +1,7 @@
 #pragma once
 //
 //  MainConfigParser.h
-//  Auditor
+//  vp-auditservice
 //
 
 

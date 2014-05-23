@@ -22,10 +22,10 @@
 .DS_Store
 
 # Executables
-auditor
+vp-auditservice
 *.exe
 *.out
 *.app
 
 # Ignore custom config files
-auditserver.conf
+vp-auditservice.conf

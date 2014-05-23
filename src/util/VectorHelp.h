@@ -5,6 +5,9 @@
 #include <algorithm>
 #include <vector>
 
+
+// This is incomplete, and will NOT work for strings
+
 template <class T>
 static bool compareVectors(std::vector<T> a, std::vector<T> b)
 {

@@ -1,4 +1,4 @@
-# Auditor 0.0.0 Scons build script
+# vp-auditservice 0.0.0 Scons build script
 #
 # You must have "scons" installed to perform this build.
 #
@@ -34,12 +34,12 @@ src/main.cpp
 
 object_list = env.Object(source = sources)
 
-auditor = env.Program('auditor', source = object_list)
-Default(auditor)
+auditor = env.Program('vp-auditservice', source = object_list)
+Default('vp-auditservice')
 
 
 # Installation Target
 
-env.Install("/usr/local/bin", auditor)
+env.Install("/usr/local/bin", 'vp-auditservice')
 env.Alias('install', ['/usr/local/bin'])
 

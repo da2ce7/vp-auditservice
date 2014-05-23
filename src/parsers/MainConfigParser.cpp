@@ -1,6 +1,6 @@
 //
 //  MainConfigParser.cpp
-//  Auditor
+//  vp-auditservice
 //
 
 

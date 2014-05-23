@@ -193,7 +193,16 @@ bool BitMessage::newMailExists(std::string address){
 }
 
 
-std::vector<NetworkMail> BitMessage::getUnreadMail(std::string address){return std::vector<NetworkMail>();} // You don't want to have to do copies of your whole inbox for every download
+std::vector<NetworkMail> BitMessage::getUnreadMail(std::string address){
+    
+    std::vector<NetworkMail> unreadMail;
+    
+    return std::vector<NetworkMail>();
+
+
+} // You don't want to have to do copies of your whole inbox for every download
+
+
 bool BitMessage::deleteMessage(NetworkMail message){return false;} // Any part of the message should be able to be used to delete it from an inbox
 bool BitMessage::markRead(NetworkMail message, bool read){return false;} // By default this marks a given message as read or not, not all API's will support this and should thus return false.
 

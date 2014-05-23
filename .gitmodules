@@ -1,3 +1,6 @@
+
+# Server Core submodule, used for building a standalone vp-auditservice without the need for separately setting up Open-Transactions
+
 [submodule "submodules/ServerCore"]
 	path = submodules/ServerCore
 	url = https://github.com/monetas/ServerCore

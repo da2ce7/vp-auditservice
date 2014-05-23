@@ -1,7 +1,7 @@
 #pragma once
 //
 //  Network.h
-//  Auditor
+//  vp-auditservice
 //
 
 #include <string>
