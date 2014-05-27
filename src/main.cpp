@@ -49,6 +49,42 @@ int main(int argc, char * argv[])
     std::cout << "Checking for new mail: " << netModule->newMailExists() << std::endl;
     std::cout << "Checking for new mail on \"BM-2cXRVEbV9q3p1v6EDBH5jhm21h2MWLNaTa\": " << netModule->newMailExists("BM-2cXRVEbV9q3p1v6EDBH5jhm21h2MWLNaTa") <<std::endl;
     
+    int debugInboxSize = netModule->getAllInboxes().size();
+    std::cout << "Inbox Size is : " << debugInboxSize << " messages." << std::endl;
+    // Uncomment this section to test deleting messages
+    /*
+    if(debugInboxSize > 0){
+        std::string debugInboxLastMessageID = netModule->getAllInboxes().at(debugInboxSize-1).getMessageID();
+        std::cout << "Trashing oldest message from Inbox, with ID: " << debugInboxLastMessageID << std::endl;
+        netModule->deleteMessage(debugInboxLastMessageID);
+    }
+    */
+    // Uncomment this section to test marking messages as read
+    /*
+    if(debugInboxSize > 0){
+        std::string debugInboxLastMessageID = netModule->getAllInboxes().at(debugInboxSize-1).getMessageID();
+        std::cout << "Marking last message in inbox as unread, with ID: " << debugInboxLastMessageID << std::endl;
+        netModule->markRead(debugInboxLastMessageID, false);
+    }
+    */
+     
+    int debugAddressInboxSize = netModule->getInbox("BM-2cXRVEbV9q3p1v6EDBH5jhm21h2MWLNaTa").size();
+    std::cout << "Inbox Size for \"BM-2cXRVEbV9q3p1v6EDBH5jhm21h2MWLNaTa\" is : " << debugAddressInboxSize << " messages." << std::endl;
+    if(debugAddressInboxSize > 0){
+        std::cout << "Subject of first message for \"BM-2cXRVEbV9q3p1v6EDBH5jhm21h2MWLNaTa\": " << netModule->getInbox("BM-2cXRVEbV9q3p1v6EDBH5jhm21h2MWLNaTa").at(0).getSubject() << std::endl;
+    }
+    
+       
+    int debugUnreadInboxSize = netModule->getAllUnreadMail().size();
+    std::cout << "Number of unread messages in the inbox: " << debugUnreadInboxSize << std::endl;
+    if(debugUnreadInboxSize > 0){
+        std::cout << "First unread message: " << std::endl << std::endl << netModule->getAllUnreadMail().at(0).getMessage() << std::endl;
+    }
+    
+    
+    
+    
+    
     std::cout << std::endl;
     
     while(dynamic_cast<BitMessage*>(netModule)->queueSize() != 0){

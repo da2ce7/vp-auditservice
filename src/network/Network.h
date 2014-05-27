@@ -55,7 +55,7 @@ class NetworkMail {
     
 public:
     
-    NetworkMail(std::string from="", std::string to="", std::string subject="", std::string message="", bool isRead=false, std::time_t received=0, std::time_t sent=0) : m_from(from), m_to(to), m_subject(subject), m_mail(message), m_readStatus(isRead), m_received(received), m_sent(sent) {}
+    NetworkMail(std::string from="", std::string to="", std::string subject="", std::string message="", bool isRead=false, std::string messageID="", std::time_t received=0, std::time_t sent=0) : m_from(from), m_to(to), m_subject(subject), m_mail(message), m_readStatus(isRead), m_messageID(messageID), m_received(received), m_sent(sent) {}
     
     std::string getFrom(){return m_from;}
     std::string getTo(){return m_to;}
@@ -65,6 +65,7 @@ public:
     std::time_t getSentTime(){return m_sent;}
     void        setRead(bool status){m_readStatus = status;};
     bool        getRead(){ return m_readStatus;}
+    std::string getMessageID(){return m_messageID;}
     
 private:
   
@@ -77,6 +78,8 @@ private:
     std::time_t m_sent;
     
     bool m_readStatus;
+    
+    std::string m_messageID;
         
 };
 
@@ -108,14 +111,14 @@ public:
                                                                    // If a read message has been marked unread manually.
     
     virtual std::vector<NetworkMail> getInbox(std::string address=""){return std::vector<NetworkMail>();}
-    virtual std::vector<NetworkMail> getAllInboxes(){return getInbox();}
-    virtual std::vector<NetworkMail> getAllUnread(){return std::vector<NetworkMail>();}
+    virtual std::vector<NetworkMail> getAllInboxes(){return std::vector<NetworkMail>();}
+    virtual std::vector<NetworkMail> getUnreadMail(std::string address){return std::vector<NetworkMail>();}
+    virtual std::vector<NetworkMail> getAllUnreadMail(){return std::vector<NetworkMail>();}
+
+    virtual bool deleteMessage(std::string messageID){return false;} // passed as a string, as different protocols handle message ID's differently (BitMessage for example)
+    virtual bool markRead(std::string messageID, bool read=true){return false;} // By default this marks a given message as read or not, not all API's will support this and should thus return false.
     
-    virtual std::vector<NetworkMail> getUnreadMail(std::string address){return std::vector<NetworkMail>();} // You don't want to have to do copies of your whole inbox for every download
-    virtual bool deleteMessage(NetworkMail message){return false;} // Any part of the message should be able to be used to delete it from an inbox
-    virtual bool markRead(NetworkMail message, bool read=true){return false;} // By default this marks a given message as read or not, not all API's will support this and should thus return false.
-    
-    virtual bool sendMail(NetworkMail message){return false;}
+    virtual bool sendMail(NetworkMail message){return false;} // Need From, To, Subject and Message in formatted NetworkMail object
     
     virtual bool publishSupport(){return false;}
     virtual std::vector<std::string> getSubscriptions(){return std::vector<std::string>();}

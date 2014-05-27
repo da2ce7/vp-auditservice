@@ -88,7 +88,7 @@ public:
     
     BitInboxMessage(std::string msgID, BitMessageAddress toAddress, BitMessageAddress fromAddress, base64 subject, base64 message, int encodingType, std::time_t m_receivedTime, bool m_read) : m_msgID(msgID), m_toAddress(toAddress), m_fromAddress(fromAddress), m_subject(subject), m_message(message), m_encodingType(encodingType), m_receivedTime(m_receivedTime), m_read(m_read) {}
     
-    std::string getMsgID(){return m_msgID;}
+    std::string getMessageID(){return m_msgID;}
     BitMessageAddress getToAddress(){return m_toAddress;}
     BitMessageAddress getFromAddress(){return m_fromAddress;}
     base64 getSubject(){return m_subject;}
@@ -120,7 +120,7 @@ public:
     
     BitSentMessage(std::string msgID, BitMessageAddress toAddress, BitMessageAddress fromAddress, base64 subject, base64 message, int encodingType, std::time_t lastActionTime, std::string status, std::string ackData) : m_msgID(msgID), m_toAddress(toAddress), m_fromAddress(fromAddress), m_subject(subject), m_message(message), m_encodingType(encodingType), m_lastActionTime(lastActionTime), m_status(status), m_ackData(ackData) {}
     
-    std::string getMsgID(){return m_msgID;}
+    std::string getMessageID(){return m_msgID;}
     BitMessageAddress getToAddress(){return m_toAddress;}
     BitMessageAddress getFromAddress(){return m_fromAddress;}
     base64 getSubject(){return m_subject;}
@@ -198,13 +198,13 @@ public:
     bool checkMail(); // Asks the network interface to manually check for messages // Queued
     bool newMailExists(std::string address=""); // checks for new mail, returns true if there is new mail in the queue. // "Queued", will queue new mail request if inbox is empty.
     
-    std::vector<NetworkMail> getInbox(std::string address=""); // Not Queued
-    std::vector<NetworkMail> getAllInboxes();  // Not Queued
-    std::vector<NetworkMail> getAllUnread();    // Not Queued
+    std::vector<NetworkMail> getInbox(std::string address=""); // No queueing, if no inbox exists (which shouldn't happen), it will block until one is returned by the api server.
+    std::vector<NetworkMail> getAllInboxes();  // Implemented as passthrough function
+    std::vector<NetworkMail> getUnreadMail(std::string address);
+    std::vector<NetworkMail> getAllUnreadMail();
     
-    std::vector<NetworkMail> getUnreadMail(std::string address); // You don't want to have to do copies of your whole inbox for every download  // Not Queued
-    bool deleteMessage(NetworkMail message); // Any part of the message should be able to be used to delete it from an inbox    // Not Queued
-    bool markRead(NetworkMail message, bool read=true); // By default this marks a given message as read or not, not all API's will support this and should thus return false.  // Not Queued
+    bool deleteMessage(std::string messageID); // Any part of the message should be able to be used to delete it from an inbox    // Queued
+    bool markRead(std::string messageID, bool read=true); // By default this marks a given message as read or not, not all API's will support this and should thus return false.  // Not Queued
     
     
     bool sendMail(NetworkMail message); // Not Queued
@@ -230,7 +230,7 @@ public:
     
     void getAllInboxMessages();
     
-    BitInboxMessage getInboxMessageByID(std::string msgID, bool setRead=true);
+    void getInboxMessageByID(std::string msgID, bool setRead=true);
     
     BitMessageOutbox getAllSentMessages();
     
@@ -240,7 +240,7 @@ public:
 
     std::vector<BitSentMessage> getSentMessagesBySender(std::string address);
     
-    bool trashMessage(std::string msgID);
+    void trashMessage(std::string msgID);
     
     bool trashSentMessageByAckData(std::string ackData);
 
@@ -371,6 +371,7 @@ private:
     
     std::mutex m_localInboxMutex;
     std::vector<NetworkMail> m_localInbox;
+    BitMessageInbox m_localUnformattedInbox; // Necessary for doing operations on BitMessage-specific messages
     std::atomic<bool> m_newMailExists;
     
 };

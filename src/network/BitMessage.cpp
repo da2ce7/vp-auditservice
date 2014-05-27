@@ -171,45 +171,159 @@ bool BitMessage::checkMail(){
 bool BitMessage::newMailExists(std::string address){
     
     if(m_localInbox.size() == 0){
-        checkMail();
+        getAllInboxMessages(); // Blocking call, otherwise this may cause problems.
     }
-    
+    std::unique_lock<std::mutex> mlock(m_localInboxMutex);
+
     if(address != ""){
         for(int x=0; x<m_localInbox.size(); x++){
 
-            if(m_localInbox.at(x).getTo() == address && m_localInbox.at(x).getRead() == false)
+            if(m_localInbox.at(x).getTo() == address && m_localInbox.at(x).getRead() == false){
+                m_localInboxMutex.unlock();
                 return true;
+            }
         }
     }
     else{
         for(int x = 0; x < m_localInbox.size(); x++){
-            if(m_localInbox.at(x).getRead() == false)
+            if(m_localInbox.at(x).getRead() == false){
+                m_localInboxMutex.unlock();
                 return true;
+            }
         }
     }
-    
+    m_localInboxMutex.unlock();
     return false;
 
 }
 
+std::vector<NetworkMail> BitMessage::getInbox(std::string address){
+    
+    if(m_localInbox.size() == 0){
+        getAllInboxMessages();  // Blocking call, otherwise this may cause problems.
+    }
+    std::unique_lock<std::mutex> mlock(m_localInboxMutex);
+    try{
+        
+        if(address != ""){
+            std::vector<NetworkMail> inboxForAddress;
+            for(int x=0; x<m_localInbox.size(); x++){
+                if(m_localInbox.at(x).getTo() == address)
+                    inboxForAddress.push_back(m_localInbox.at(x));
+            }
+            m_localInboxMutex.unlock();
+            return inboxForAddress;
+        }
+        else{
+            m_localInboxMutex.unlock();
+            return m_localInbox;
+        }
+    }
+    catch(...){
+        m_localInboxMutex.unlock();
+        return std::vector<NetworkMail>();
+    }
+    m_localInboxMutex.unlock();
+    return std::vector<NetworkMail>();
+
+}
+
+std::vector<NetworkMail> BitMessage::getAllInboxes(){return getInbox("");} // Note that this is just a passthrough way of calling getInbox() to adhere to the interface.
 
 std::vector<NetworkMail> BitMessage::getUnreadMail(std::string address){
     
     std::vector<NetworkMail> unreadMail;
+
+    if(m_localInbox.size() == 0){
+        getAllInboxMessages();  // Blocking call, otherwise this may cause problems.
+    }
+    std::unique_lock<std::mutex> mlock(m_localInboxMutex);
+    try{
+        
+        if(address != ""){
+            for(int x=0; x<m_localInbox.size(); x++){
+                if(m_localInbox.at(x).getTo() == address && m_localInbox.at(x).getRead() == false)
+                    unreadMail.push_back(m_localInbox.at(x));
+            }
+            m_localInboxMutex.unlock();
+            return unreadMail;
+        }
+        else{
+            for(int x=0; x<m_localInbox.size(); x++){
+                if(m_localInbox.at(x).getRead() == false)
+                    unreadMail.push_back(m_localInbox.at(x));
+            }
+            m_localInboxMutex.unlock();
+            return unreadMail;
+        }
+    }
+    catch(...){
+        m_localInboxMutex.unlock();
+        return unreadMail;
+    }
+    m_localInboxMutex.unlock();
+    return unreadMail;
+}
+
+std::vector<NetworkMail> BitMessage::getAllUnreadMail(){return getUnreadMail("");} // Note that this is just a passthrough way of calling getUnreadMail() to adhere to the interface.
+
+bool BitMessage::deleteMessage(std::string messageID){
     
-    return std::vector<NetworkMail>();
+    if(m_localInbox.size() == 0){
+        getAllInboxMessages();  // Blocking call, otherwise this may cause problems.
+    }
+    std::unique_lock<std::mutex> mlock(m_localInboxMutex);
+    for(int x=0; x<m_localInbox.size(); x++){
+
+        if(m_localInbox.at(x).getMessageID() == messageID){
+            m_localInbox.erase(m_localInbox.begin() + x);
+        }
+        try{
+            std::function<void()> command = std::bind(&BitMessage::trashMessage, this, messageID);
+            bm_queue->addToQueue(command);
+            m_localInboxMutex.unlock();
+            return true;
+        }
+        catch(...){
+            m_localInboxMutex.unlock();
+            return false;
+        }
+    }
+    
+    m_localInboxMutex.unlock();
+    return false;
+
+} // Any part of the message should be able to be used to delete it from an inbox
+
+bool BitMessage::markRead(std::string messageID, bool read){
+
+    if(m_localInbox.size() == 0){
+        getAllInboxMessages();  // Blocking call, otherwise this may cause problems.
+    }
+    
+    std::unique_lock<std::mutex> mlock(m_localInboxMutex);
+    for(int x=0; x<m_localInbox.size(); x++){
+
+        if(m_localInbox.at(x).getMessageID() == messageID){
+            m_localInbox.at(x).setRead(read);
+        }
+        try{
+            std::function<void()> command = std::bind(&BitMessage::getInboxMessageByID, this, messageID, read);
+            bm_queue->addToQueue(command);
+            m_localInboxMutex.unlock();
+            return true;
+        }
+        catch(...){
+            m_localInboxMutex.unlock();
+            return false;
+        }
+    }
+    m_localInboxMutex.unlock();
+    return false;
+} // By default this marks a given message as read or not, not all API's will support this and should thus return false.
 
 
-} // You don't want to have to do copies of your whole inbox for every download
 
-
-bool BitMessage::deleteMessage(NetworkMail message){return false;} // Any part of the message should be able to be used to delete it from an inbox
-bool BitMessage::markRead(NetworkMail message, bool read){return false;} // By default this marks a given message as read or not, not all API's will support this and should thus return false.
-
-
-std::vector<NetworkMail> BitMessage::getInbox(std::string address){return std::vector<NetworkMail>();}
-std::vector<NetworkMail> BitMessage::getAllInboxes(){return getInbox();}
-std::vector<NetworkMail> BitMessage::getAllUnread(){return std::vector<NetworkMail>();}
 
 bool BitMessage::sendMail(NetworkMail message){return false;}
 
@@ -334,8 +448,11 @@ void BitMessage::getAllInboxMessages(){
     std::unique_lock<std::mutex> mlock(m_localInboxMutex); // Lock so that we dont have a race condition.
     // Populate our local inbox.
 
+    m_localInbox.clear();
+    m_localUnformattedInbox.clear();
     for(int x=0; x<inbox.size(); x++){
-        NetworkMail l_mail(inbox.at(x).getFromAddress(), inbox.at(x).getToAddress(), inbox.at(x).getSubject().decoded(), inbox.at(x).getMessage().decoded(), inbox.at(x).getRead(), inbox.at(x).getReceivedTime() );
+        m_localUnformattedInbox.push_back(inbox.at(x));
+        NetworkMail l_mail(inbox.at(x).getFromAddress(), inbox.at(x).getToAddress(), inbox.at(x).getSubject().decoded(), inbox.at(x).getMessage().decoded(), inbox.at(x).getRead(), inbox.at(x).getMessageID(), inbox.at(x).getReceivedTime() );
         
         m_localInbox.push_back(l_mail);
     }
@@ -345,7 +462,7 @@ void BitMessage::getAllInboxMessages(){
 };
 
 
-BitInboxMessage BitMessage::getInboxMessageByID(std::string msgID, bool setRead){
+void BitMessage::getInboxMessageByID(std::string msgID, bool setRead){
 
     Parameters params;
     
@@ -357,7 +474,7 @@ BitInboxMessage BitMessage::getInboxMessageByID(std::string msgID, bool setRead)
     if(result.first == false){
         std::cerr << "Error: getInboxMessageByID failed" << std::endl;
         BitInboxMessage message("", "", "", base64(""), base64(""), 0, 0, false);
-        return message;
+        //return message;
     }
     else if(result.second.type() == xmlrpc_c::value::TYPE_STRING){
         std::size_t found;
@@ -365,7 +482,7 @@ BitInboxMessage BitMessage::getInboxMessageByID(std::string msgID, bool setRead)
         if(found!=std::string::npos){
             std::cerr << std::string(ValueString(result.second)) << std::endl;
             BitInboxMessage message("", "", "", base64(""), base64(""), 0, 0, false);
-            return message;
+            //return message;
         }
     }
     
@@ -378,7 +495,7 @@ BitInboxMessage BitMessage::getInboxMessageByID(std::string msgID, bool setRead)
     {
         std::cerr  << "Failed to parse inbox\n" << reader.getFormattedErrorMessages();
         BitInboxMessage message("", "", "", base64(""), base64(""), 0, 0, false);
-        return message;
+        //return message;
     }
     
     const Json::Value inboxMessage = root["inboxMessage"];
@@ -390,7 +507,7 @@ BitInboxMessage BitMessage::getInboxMessageByID(std::string msgID, bool setRead)
     
     BitInboxMessage message(inboxMessage[0].get("msgid", "").asString(), inboxMessage[0].get("toAddress", "").asString(), inboxMessage[0].get("fromAddress", "").asString(), base64(inboxMessage[0].get("subject", "").asString(), true), cleanMessage, inboxMessage[0].get("encodingType", 0).asInt(), std::atoi(inboxMessage[0].get("receivedTime", 0).asString().c_str()), inboxMessage[0].get("read", false).asBool());
      
-    return message;
+    //return message;
 
 };
 
@@ -576,7 +693,7 @@ std::vector<BitSentMessage> BitMessage::getSentMessagesBySender(std::string addr
 };
 
 
-bool BitMessage::trashMessage(std::string msgID){
+void BitMessage::trashMessage(std::string msgID){
 
     Parameters params;
     params.push_back(ValueString(msgID));
@@ -585,18 +702,14 @@ bool BitMessage::trashMessage(std::string msgID){
     
     if(result.first == false){
         std::cerr << "Error: trashMessage failed" << std::endl;
-        return false;
     }
     else if(result.second.type() == xmlrpc_c::value::TYPE_STRING){
         std::size_t found;
         found=std::string(ValueString(result.second)).find("API Error");
         if(found!=std::string::npos){
             std::cerr << std::string(ValueString(result.second)) << std::endl;
-            return false;
         }
     }
-    
-    return true;
     
 };
 
