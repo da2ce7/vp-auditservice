@@ -122,7 +122,7 @@ bool BitMessage::addressAccessible(std::string address){
     }
     mlock.unlock();
     
-    checkAddresses(); // If the address isn't acccessible, try and fetch the latest
+    checkLocalAddresses(); // If the address isn't acccessible, try and fetch the latest
                      // Address book from the API server for another try later.
                      // In most cases, you won't be checking for an address that you
                      // Don't already know about from the addressbook.
@@ -161,7 +161,7 @@ std::vector<std::string> BitMessage::getLocalAddresses(){
 }
 
 
-bool BitMessage::checkAddresses(){
+bool BitMessage::checkLocalAddresses(){
     try{
         std::function<void()> command = std::bind(&BitMessage::listAddresses, this);
         bm_queue->addToQueue(command);
@@ -357,7 +357,7 @@ bool BitMessage::sendMail(NetworkMail message){
 
 std::vector<std::string> BitMessage::getSubscriptions(){return std::vector<std::string>();}
 
-bool BitMessage::checkContacts(){
+bool BitMessage::checkRemoteAddresses(){
     
     try{
         std::function<void()> command = std::bind(&BitMessage::listAddressBookEntries, this); // push a list address request to the queue.

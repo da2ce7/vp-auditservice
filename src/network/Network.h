@@ -101,10 +101,12 @@ public:
     virtual bool createAddress(std::string options){return false;}
     virtual bool createDeterministicAddress(std::string key){return false;}
     
-    virtual bool addressAccessible(std::string address){return false;}
+    virtual bool addressAccessible(std::string address){return false;}  // Checks to see if an address is useable for sending messages.
+    
     virtual std::vector<std::string> getLocalAddresses(){return std::vector<std::string>();}
     virtual std::vector<std::string> getRemoteAddresses(){return std::vector<std::string>();}
-    virtual bool checkAddresses(){return false;} // Asks the network interface to manually check for new owned addresses.
+    virtual bool checkLocalAddresses(){return false;} // Asks the network interface to manually check for new owned addresses.
+    virtual bool checkRemoteAddresses(){return false;} // Asks the API to refresh its list of contacts.
     
     virtual bool checkMail(){return false;} // Asks the network interface to manually check for messages
     virtual bool newMailExists(std::string address=""){return false;} // checks for new mail, returns true if there is new mail in the queue.
@@ -132,7 +134,6 @@ public:
     
     // Functions for importing/exporting from BitMessage server addressbook
     
-    virtual bool checkContacts(){return false;} // Asks the API to refresh its list of contacts.
     
     virtual std::string getLabel(std::string address){return "";}
     virtual bool setLabel(std::string label, std::string address){return false;}

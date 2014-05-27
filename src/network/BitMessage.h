@@ -193,8 +193,9 @@ public:
     
     std::vector<std::string> getRemoteAddresses();    // Queued
     std::vector<std::string> getLocalAddresses();    // Queued
-    bool checkAddresses(); // Queued
-    
+    bool checkLocalAddresses(); // Queued
+    bool checkRemoteAddresses(); // Queued
+
     bool checkMail(); // Asks the network interface to manually check for messages // Queued
     bool newMailExists(std::string address=""); // checks for new mail, returns true if there is new mail in the queue. // "Queued", will queue new mail request if inbox is empty.
     
@@ -204,15 +205,13 @@ public:
     std::vector<NetworkMail> getAllUnreadMail();
     
     bool deleteMessage(std::string messageID); // Any part of the message should be able to be used to delete it from an inbox    // Queued
-    bool markRead(std::string messageID, bool read=true); // By default this marks a given message as read or not, not all API's will support this and should thus return false.  // Not Queued
+    bool markRead(std::string messageID, bool read=true); // By default this marks a given message as read or not, not all API's will support this and should thus return false.  // Queued
     
-    
-    bool sendMail(NetworkMail message); // Not Queued
+    bool sendMail(NetworkMail message); // Queued
     
     bool publishSupport(){return true;};
     std::vector<std::string> getSubscriptions();
     
-    bool checkContacts();
     
     // Message Queue Interaction
     bool startQueue();
