@@ -102,7 +102,8 @@ public:
     virtual bool createDeterministicAddress(std::string key){return false;}
     
     virtual bool addressAccessible(std::string address){return false;}
-    virtual std::vector<std::string> getAddresses(){return std::vector<std::string>();}
+    virtual std::vector<std::string> getLocalAddresses(){return std::vector<std::string>();}
+    virtual std::vector<std::string> getRemoteAddresses(){return std::vector<std::string>();}
     virtual bool checkAddresses(){return false;} // Asks the network interface to manually check for new owned addresses.
     
     virtual bool checkMail(){return false;} // Asks the network interface to manually check for messages
@@ -118,7 +119,7 @@ public:
     virtual bool deleteMessage(std::string messageID){return false;} // passed as a string, as different protocols handle message ID's differently (BitMessage for example)
     virtual bool markRead(std::string messageID, bool read=true){return false;} // By default this marks a given message as read or not, not all API's will support this and should thus return false.
     
-    virtual bool sendMail(NetworkMail message){return false;} // Need From, To, Subject and Message in formatted NetworkMail object
+    virtual bool sendMail(NetworkMail message){return false;} // Need To, From, Subject and Message in formatted NetworkMail object
     
     virtual bool publishSupport(){return false;}
     virtual std::vector<std::string> getSubscriptions(){return std::vector<std::string>();}

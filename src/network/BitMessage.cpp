@@ -130,7 +130,7 @@ bool BitMessage::addressAccessible(std::string address){
     return false;
 } // Queued
 
-std::vector<std::string> BitMessage::getAddresses(){
+std::vector<std::string> BitMessage::getRemoteAddresses(){
     
     std::unique_lock<std::mutex> mlock(m_localAddressBookMutex);
 
@@ -144,6 +144,22 @@ std::vector<std::string> BitMessage::getAddresses(){
     return addresses;
 
 } // Queued
+
+std::vector<std::string> BitMessage::getLocalAddresses(){
+    
+    std::unique_lock<std::mutex> mlock(m_localIdentitiesMutex);
+    
+    std::vector<std::string> addresses;
+    
+    for(int x = 0; x < m_localIdentities.size(); x++){
+        addresses.push_back(m_localIdentities.at(x).getAddress());
+    }
+    
+    mlock.unlock();
+    
+    return addresses;
+}
+
 
 bool BitMessage::checkAddresses(){
     try{
@@ -179,7 +195,7 @@ bool BitMessage::newMailExists(std::string address){
         for(int x=0; x<m_localInbox.size(); x++){
 
             if(m_localInbox.at(x).getTo() == address && m_localInbox.at(x).getRead() == false){
-                m_localInboxMutex.unlock();
+                mlock.unlock();
                 return true;
             }
         }
@@ -187,12 +203,12 @@ bool BitMessage::newMailExists(std::string address){
     else{
         for(int x = 0; x < m_localInbox.size(); x++){
             if(m_localInbox.at(x).getRead() == false){
-                m_localInboxMutex.unlock();
+                mlock.unlock();
                 return true;
             }
         }
     }
-    m_localInboxMutex.unlock();
+    mlock.unlock();
     return false;
 
 }
@@ -211,19 +227,19 @@ std::vector<NetworkMail> BitMessage::getInbox(std::string address){
                 if(m_localInbox.at(x).getTo() == address)
                     inboxForAddress.push_back(m_localInbox.at(x));
             }
-            m_localInboxMutex.unlock();
+            mlock.unlock();
             return inboxForAddress;
         }
         else{
-            m_localInboxMutex.unlock();
+            mlock.unlock();
             return m_localInbox;
         }
     }
     catch(...){
-        m_localInboxMutex.unlock();
+        mlock.unlock();
         return std::vector<NetworkMail>();
     }
-    m_localInboxMutex.unlock();
+    mlock.unlock();
     return std::vector<NetworkMail>();
 
 }
@@ -245,7 +261,7 @@ std::vector<NetworkMail> BitMessage::getUnreadMail(std::string address){
                 if(m_localInbox.at(x).getTo() == address && m_localInbox.at(x).getRead() == false)
                     unreadMail.push_back(m_localInbox.at(x));
             }
-            m_localInboxMutex.unlock();
+            mlock.unlock();
             return unreadMail;
         }
         else{
@@ -253,15 +269,15 @@ std::vector<NetworkMail> BitMessage::getUnreadMail(std::string address){
                 if(m_localInbox.at(x).getRead() == false)
                     unreadMail.push_back(m_localInbox.at(x));
             }
-            m_localInboxMutex.unlock();
+            mlock.unlock();
             return unreadMail;
         }
     }
     catch(...){
-        m_localInboxMutex.unlock();
+        mlock.unlock();
         return unreadMail;
     }
-    m_localInboxMutex.unlock();
+    mlock.unlock();
     return unreadMail;
 }
 
@@ -281,16 +297,16 @@ bool BitMessage::deleteMessage(std::string messageID){
         try{
             std::function<void()> command = std::bind(&BitMessage::trashMessage, this, messageID);
             bm_queue->addToQueue(command);
-            m_localInboxMutex.unlock();
+            mlock.unlock();
             return true;
         }
         catch(...){
-            m_localInboxMutex.unlock();
+            mlock.unlock();
             return false;
         }
     }
     
-    m_localInboxMutex.unlock();
+    mlock.unlock();
     return false;
 
 } // Any part of the message should be able to be used to delete it from an inbox
@@ -310,22 +326,33 @@ bool BitMessage::markRead(std::string messageID, bool read){
         try{
             std::function<void()> command = std::bind(&BitMessage::getInboxMessageByID, this, messageID, read);
             bm_queue->addToQueue(command);
-            m_localInboxMutex.unlock();
+            mlock.unlock();
             return true;
         }
         catch(...){
-            m_localInboxMutex.unlock();
+            mlock.unlock();
             return false;
         }
     }
-    m_localInboxMutex.unlock();
+    mlock.unlock();
     return false;
 } // By default this marks a given message as read or not, not all API's will support this and should thus return false.
 
 
 
 
-bool BitMessage::sendMail(NetworkMail message){return false;}
+bool BitMessage::sendMail(NetworkMail message){
+    try{
+        
+        std::function<void()> command = std::bind(&BitMessage::sendMessage, this, message.getTo(), message.getFrom(), base64(message.getSubject()), base64(message.getMessage()), 2);
+        bm_queue->addToQueue(command);
+        return true;
+    }
+    catch(...){
+        return false;
+    }
+    return false;
+}
 
 
 std::vector<std::string> BitMessage::getSubscriptions(){return std::vector<std::string>();}
@@ -743,7 +770,7 @@ bool BitMessage::trashSentMessageByAckData(std::string ackData){
 // Message Management
 
 
-std::string BitMessage::sendMessage(std::string fromAddress, std::string toAddress, base64 subject, base64 message, int encodingType){
+void BitMessage::sendMessage(std::string fromAddress, std::string toAddress, base64 subject, base64 message, int encodingType){
 
     Parameters params;
     params.push_back(ValueString(fromAddress));
@@ -757,18 +784,18 @@ std::string BitMessage::sendMessage(std::string fromAddress, std::string toAddre
     
     if(result.first == false){
         std::cerr << "Error: sendMessage failed" << std::endl;
-        return "";
+        //return "";
     }
     else if(result.second.type() == xmlrpc_c::value::TYPE_STRING){
         std::size_t found;
         found=std::string(ValueString(result.second)).find("API Error");
         if(found!=std::string::npos){
             std::cerr << std::string(ValueString(result.second)) << std::endl;
-            return "";
+            //return "";
         }
     }
     
-    return std::string(ValueString(result.second));
+    //return std::string(ValueString(result.second));
 
 };
 

@@ -189,10 +189,10 @@ public:
     bool createAddress(std::string options);  // Queued
     bool createDeterministicAddress(std::string key); // Queued
     
-    // Not yet implemented
-     
     bool addressAccessible(std::string address);  // Queued
-    std::vector<std::string> getAddresses();    // Queued
+    
+    std::vector<std::string> getRemoteAddresses();    // Queued
+    std::vector<std::string> getLocalAddresses();    // Queued
     bool checkAddresses(); // Queued
     
     bool checkMail(); // Asks the network interface to manually check for messages // Queued
@@ -246,8 +246,8 @@ public:
 
     
     // Message Management
-    std::string sendMessage(std::string fromAddress, std::string toAddress, base64 subject, base64 message, int encodingType=2);
-    std::string sendMessage(std::string fromAddress, std::string toAddress, std::string subject, std::string message, int encodingType=2){return sendMessage(fromAddress, toAddress, base64(subject), base64(message), encodingType);}
+    void sendMessage(std::string fromAddress, std::string toAddress, base64 subject, base64 message, int encodingType=2);
+    //std::string sendMessage(std::string fromAddress, std::string toAddress, std::string subject, std::string message, int encodingType=2){return sendMessage(fromAddress, toAddress, base64(subject), base64(message), encodingType);}
 
     std::string sendBroadcast(std::string fromAddress, base64 subject, base64 message, int encodingType=2);
     std::string sendBroadcast(std::string fromAddress, std::string subject, std::string message, int encodingType=2){return sendBroadcast(fromAddress, base64(subject), base64(message), encodingType);}
@@ -373,6 +373,10 @@ private:
     std::vector<NetworkMail> m_localInbox;
     BitMessageInbox m_localUnformattedInbox; // Necessary for doing operations on BitMessage-specific messages
     std::atomic<bool> m_newMailExists;
+    
+    std::mutex m_localOutboxMutex;
+    std::vector<NetworkMail> m_localOutbox;
+    BitMessageInbox m_localUnformattedOutbox; // Necessary for doing operations on BitMessage-specific messages
     
 };
 

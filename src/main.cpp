@@ -82,6 +82,26 @@ int main(int argc, char * argv[])
     }
     
     
+    std::cout << std::endl;
+    std::cout << std::endl;
+
+    // This is a bit of a more complex example, how to send mail:
+    std::cout << "Sending Message from first useable address to Echo Server" << std::endl;
+    std::vector<std::string> useableAddresses = netModule->getLocalAddresses();
+    if(useableAddresses.size() > 0){
+        std::string firstAddress = useableAddresses.at(0);
+        std::cout << "First Useable Address: " << firstAddress << std::endl;
+        
+        // BM-orkCbppXWSqPpAxnz6jnfTZ2djb5pJKDb - BitMessage Echo Server, useful for Debugging
+        NetworkMail outgoingMessage(firstAddress, "BM-orkCbppXWSqPpAxnz6jnfTZ2djb5pJKDb", "VP-AuditService Test", "Testing Echo Server");
+        netModule->sendMail(outgoingMessage);
+    }
+    else{
+        std::cout << "No Useable Addresses" << std::endl;
+    }
+    
+    
+    
     
     
     
