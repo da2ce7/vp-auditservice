@@ -12,8 +12,15 @@
 #include <vector>
 #include <utility>
 #include <algorithm>
-#include <thread>
+
+#ifndef OT_USE_TR1
 #include <chrono>
+#include <thread>
+#else
+#include <boost/chrono.hpp>
+#include <boost/thread.hpp>
+#endif
+
 #include <functional>
 
 #include<boost/tokenizer.hpp>
