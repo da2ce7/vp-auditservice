@@ -210,7 +210,8 @@ public:
     bool sendMail(NetworkMail message); // Queued
     
     bool publishSupport(){return true;};
-    std::vector<std::string> getSubscriptions();
+    std::vector<std::pair<std::string,std::string> > getSubscriptions();
+    bool refreshSubscriptions();
     
     
     // Message Queue Interaction
@@ -254,7 +255,7 @@ public:
     
     // Subscription Management
     
-    BitMessageSubscriptionList listSubscriptions();
+    void listSubscriptions();
     
     bool addSubscription(std::string address, base64 label);
     bool addSubscription(std::string address, std::string label){return addSubscription(address, base64(label));}
@@ -376,6 +377,9 @@ private:
     std::mutex m_localOutboxMutex;
     std::vector<NetworkMail> m_localOutbox;
     BitMessageInbox m_localUnformattedOutbox; // Necessary for doing operations on BitMessage-specific messages
+    
+    std::mutex m_localSubscriptionListMutex;
+    BitMessageSubscriptionList m_localSubscriptionList;
     
 };
 

@@ -172,6 +172,19 @@ bool BitMessage::checkLocalAddresses(){
     }
 } // Queued
 
+
+bool BitMessage::checkRemoteAddresses(){
+    
+    try{
+        std::function<void()> command = std::bind(&BitMessage::listAddressBookEntries, this); // push a list address request to the queue.
+        bm_queue->addToQueue(command);
+        return true;
+    }
+    catch(...){
+        return false;
+    }
+}
+
 bool BitMessage::checkMail(){
     try{
         std::function<void()> command = std::bind(&BitMessage::getAllInboxMessages, this);
@@ -355,19 +368,46 @@ bool BitMessage::sendMail(NetworkMail message){
 }
 
 
-std::vector<std::string> BitMessage::getSubscriptions(){return std::vector<std::string>();}
+std::vector<std::pair<std::string,std::string> > BitMessage::getSubscriptions(){
+    
+    std::unique_lock<std::mutex> mlock(m_localSubscriptionListMutex);
+    
+    if(m_localSubscriptionList.size() < 1){
+        mlock.unlock();
+        refreshSubscriptions();
+        return std::vector<std::pair<std::string, std::string> >();
+    }
+    else{
+        std::vector<std::pair<std::string, std::string> > subscriptionList;
+        for(int x = 0; x < m_localSubscriptionList.size(); x++){
+            std::pair<std::string, std::string> subscription(m_localSubscriptionList.at(x).getLabel().decoded(), m_localSubscriptionList.at(x).getAddress());
+            subscriptionList.push_back(subscription);
+        }
+        mlock.unlock();
+        return subscriptionList;
+    }
+    
+    // We should never reach here.
+    mlock.unlock();
+    return std::vector<std::pair<std::string, std::string> >();
 
-bool BitMessage::checkRemoteAddresses(){
+}
+
+
+bool BitMessage::refreshSubscriptions(){
     
     try{
-        std::function<void()> command = std::bind(&BitMessage::listAddressBookEntries, this); // push a list address request to the queue.
+        std::function<void()> command = std::bind(&BitMessage::listSubscriptions, this);
         bm_queue->addToQueue(command);
         return true;
     }
     catch(...){
         return false;
     }
+    return false;
 }
+
+
 
 /*
  * Message Queue Interaction
@@ -833,7 +873,7 @@ std::string BitMessage::sendBroadcast(std::string fromAddress, base64 subject, b
 // Subscription Management
 
 
-BitMessageSubscriptionList BitMessage::listSubscriptions(){
+void BitMessage::listSubscriptions(){
 
     Parameters params;
     BitMessageSubscriptionList subscriptionList;
@@ -842,14 +882,14 @@ BitMessageSubscriptionList BitMessage::listSubscriptions(){
     
     if(result.first == false){
         std::cerr << "Error: listSubscriptions failed" << std::endl;
-        return subscriptionList;
+        //return subscriptionList;
     }
     else if(result.second.type() == xmlrpc_c::value::TYPE_STRING){
         std::size_t found;
         found=std::string(ValueString(result.second)).find("API Error");
         if(found!=std::string::npos){
             std::cerr << std::string(ValueString(result.second)) << std::endl;
-            return subscriptionList;
+            //return subscriptionList;
         }
     }
     
@@ -860,7 +900,7 @@ BitMessageSubscriptionList BitMessage::listSubscriptions(){
     if ( !parsesuccess )
     {
         std::cerr  << "Failed to parse subscription list\n" << reader.getFormattedErrorMessages();
-        return subscriptionList;
+        //return subscriptionList;
     }
     
     const Json::Value subscriptions = root["subscriptions"];
@@ -876,8 +916,9 @@ BitMessageSubscriptionList BitMessage::listSubscriptions(){
         
     }
     
-    return subscriptionList;
-
+    std::unique_lock<std::mutex> mlock(m_localSubscriptionListMutex);
+    m_localSubscriptionList = subscriptionList;
+    mlock.unlock();
 };
 
 
@@ -1489,5 +1530,6 @@ void BitMessage::initializeUserData(){
     listAddresses(); // Populates Local Owned Addresses
     listAddressBookEntries();  // Populates address book data, for remote users we have addresses for.
     getAllInboxMessages();
+    listSubscriptions();
     
 }

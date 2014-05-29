@@ -100,7 +100,16 @@ int main(int argc, char * argv[])
         std::cout << "No Useable Addresses" << std::endl;
     }
     
-    
+    if(netModule->getSubscriptions().size() > 0){
+        std::cout << "Subscriptions Manager Working" << std::endl;
+        std::cout << "First Subscription: ";
+        std::cout << netModule->getSubscriptions().at(0).first << " : ";
+        std::cout << netModule->getSubscriptions().at(0).second << std::endl;
+    }
+    else
+    {
+        std::cout << "No Subscriptions Available" << std::endl;
+    }
     
     
     

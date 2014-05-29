@@ -124,7 +124,8 @@ public:
     virtual bool sendMail(NetworkMail message){return false;} // Need To, From, Subject and Message in formatted NetworkMail object
     
     virtual bool publishSupport(){return false;}
-    virtual std::vector<std::string> getSubscriptions(){return std::vector<std::string>();}
+    virtual std::vector<std::pair<std::string,std::string> > getSubscriptions(){return std::vector<std::pair<std::string, std::string> >();}
+    virtual bool refreshSubscriptions(){return false;} // Need to run this to request a refresh of the subscriptions list without flooding network with data
     
     // Broadcasting Functions
     
