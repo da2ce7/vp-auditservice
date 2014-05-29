@@ -98,8 +98,8 @@ public:
     
     virtual std::string moduleType(){return "";}
     
-    virtual bool createAddress(std::string options){return false;}
-    virtual bool createDeterministicAddress(std::string key){return false;}
+    virtual bool createAddress(std::string label=""){return false;}
+    virtual bool createDeterministicAddress(std::string key, std::string label=""){return false;}
     
     virtual bool addressAccessible(std::string address){return false;}  // Checks to see if an address is useable for sending messages.
     

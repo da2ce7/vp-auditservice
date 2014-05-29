@@ -67,7 +67,7 @@ int main(int argc, char * argv[])
         netModule->markRead(debugInboxLastMessageID, false);
     }
     */
-     
+    
     int debugAddressInboxSize = netModule->getInbox("BM-2cXRVEbV9q3p1v6EDBH5jhm21h2MWLNaTa").size();
     std::cout << "Inbox Size for \"BM-2cXRVEbV9q3p1v6EDBH5jhm21h2MWLNaTa\" is : " << debugAddressInboxSize << " messages." << std::endl;
     if(debugAddressInboxSize > 0){
@@ -111,13 +111,9 @@ int main(int argc, char * argv[])
         std::cout << "No Subscriptions Available" << std::endl;
     }
     
-    
-    
-    
-    std::cout << std::endl;
-    
-    while(dynamic_cast<BitMessage*>(netModule)->queueSize() != 0){
-        ;
+    std::cout << "Attempting to create new address, this will take a while for the API server to process" << std::endl;
+    if(!netModule->createAddress("0")){
+        std::cout << "create address failed" << std::endl;
     }
     
     std::cout << std::endl;
@@ -133,6 +129,8 @@ int main(int argc, char * argv[])
     decoded << message;
     std::cout << decoded << std::endl << std::endl;
     
-    
+    while(dynamic_cast<BitMessage*>(netModule)->queueSize() != 0){
+        ;
+    }
 }
 

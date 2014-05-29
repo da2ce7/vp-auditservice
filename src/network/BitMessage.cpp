@@ -75,36 +75,87 @@ bool BitMessage::accessible(){
 }
 
 
-bool BitMessage::createAddress(std::string options=""){
+bool BitMessage::createAddress(std::string label){
+
+    std::unique_lock<std::mutex> mlock(m_localIdentitiesMutex);
     
     try{
-        // Here we will push a request to create a new random address onto the queue
-        // And then immediately request the updated list of addresses
-        std::function<void()> firstCommand = std::bind(&BitMessage::createRandomAddress, this, base64(""), false, 1, 1);
-        bm_queue->addToQueue(firstCommand);
+        if(label == ""){
+            std::cerr << "Will Not Create Address with Blank Label" << std::endl;
+            mlock.unlock();
+            return false;
+        }
     
-        std::function<void()> secondCommand = std::bind(&BitMessage::listAddresses, this);
-        bm_queue->addToQueue(secondCommand);
-        return true;
-    }
-    catch(...){
-        return false;
-    }
-}  // Queued
+        if(m_localIdentities.size() == 0){
+            checkLocalAddresses();
+            mlock.unlock();
+            return false;
+        }
+        
+        for(int x = 0; x < m_localIdentities.size(); x++){
+            if(m_localIdentities.at(x).getLabel().decoded() == label){
+                std::cerr << "Cannot Create Address: Label " << label << " already in Use" << std::endl;
+                mlock.unlock();
+                return false;
+            }
+            
+        }
 
-
-bool BitMessage::createDeterministicAddress(std::string key){
-    
-    try{
-        std::function<void()> firstCommand = std::bind(&BitMessage::createRandomAddress, this, base64(key), false, 1, 1);
+        std::function<void()> firstCommand = std::bind(&BitMessage::createRandomAddress, this, base64(label), false, 1, 1);
         bm_queue->addToQueue(firstCommand);
     
         std::function<void()> secondCommand = std::bind(&BitMessage::listAddresses, this);
         bm_queue->addToQueue(secondCommand);
         
+        mlock.unlock();
         return true;
     }
     catch(...){
+        mlock.unlock();
+        return false;
+    }
+}  // Queued
+
+
+bool BitMessage::createDeterministicAddress(std::string key, std::string label){
+
+    std::unique_lock<std::mutex> mlock(m_localIdentitiesMutex);
+
+    try{
+        
+        if(label == ""){
+            std::cerr << "Will Not Create Address with Blank Label" << std::endl;
+            mlock.unlock();
+            return false;
+        }
+        
+        if(m_localIdentities.size() == 0){
+            checkLocalAddresses();
+            mlock.unlock();
+            return false;
+        }
+        
+        for(int x = 0; x < m_localIdentities.size(); x++){
+            if(m_localIdentities.at(x).getLabel().decoded() == label){
+                std::cerr << "Cannot Create Address: Label " << label << " already in Use" << std::endl;
+                mlock.unlock();
+                return false;
+            }
+            
+        }
+        
+        
+        std::function<void()> firstCommand = std::bind(&BitMessage::createDeterministicAddresses, this, base64(key), 1, 0, 0, false, 1, 1);
+        bm_queue->addToQueue(firstCommand);
+    
+        std::function<void()> secondCommand = std::bind(&BitMessage::listAddresses, this);
+        bm_queue->addToQueue(secondCommand);
+
+        mlock.unlock();
+        return true;
+    }
+    catch(...){
+        mlock.unlock();
         return false;
     }
     
@@ -372,7 +423,7 @@ std::vector<std::pair<std::string,std::string> > BitMessage::getSubscriptions(){
     
     std::unique_lock<std::mutex> mlock(m_localSubscriptionListMutex);
     
-    if(m_localSubscriptionList.size() < 1){
+    if(m_localSubscriptionList.size() == 0){
         mlock.unlock();
         refreshSubscriptions();
         return std::vector<std::pair<std::string, std::string> >();
@@ -1087,7 +1138,7 @@ void BitMessage::listAddresses(){
     
     const Json::Value addresses = root["addresses"];
     for ( int index = 0; index < addresses.size(); ++index ){  // Iterates over the sequence elements.
-        BitMessageIdentity entry(base64(addresses[index].get("label", "").asString()), addresses[index].get("address", "").asString(), addresses[index].get("stream", 0).asInt(), addresses[index].get("enabled", false).asBool(), addresses[index].get("chan", false).asBool());
+        BitMessageIdentity entry(base64(addresses[index].get("label", "").asString(), true), addresses[index].get("address", "").asString(), addresses[index].get("stream", 0).asInt(), addresses[index].get("enabled", false).asBool(), addresses[index].get("chan", false).asBool());
         
         responses.push_back(entry);
         
@@ -1131,7 +1182,7 @@ void BitMessage::createRandomAddress(base64 label, bool eighteenByteRipe, int to
 };
 
 
-std::vector<BitMessageAddress> BitMessage::createDeterministicAddresses(base64 password, int numberOfAddresses, int addressVersionNumber, int streamNumber, bool eighteenByteRipe, int totalDifficulty, int smallMessageDifficulty){
+void BitMessage::createDeterministicAddresses(base64 password, int numberOfAddresses, int addressVersionNumber, int streamNumber, bool eighteenByteRipe, int totalDifficulty, int smallMessageDifficulty){
 
     Parameters params;
     std::vector<BitMessageAddress> addressList;
@@ -1149,14 +1200,14 @@ std::vector<BitMessageAddress> BitMessage::createDeterministicAddresses(base64 p
     
     if(result.first == false){
         std::cerr << "Error: createDeterministicAddresses failed" << std::endl;
-        return addressList;
+        //return addressList;
     }
     else if(result.second.type() == xmlrpc_c::value::TYPE_STRING){
         std::size_t found;
         found=std::string(ValueString(result.second)).find("API Error");
         if(found!=std::string::npos){
             std::cerr << std::string(ValueString(result.second)) << std::endl;
-            return addressList;
+            //return addressList;
         }
     }
     
@@ -1167,7 +1218,7 @@ std::vector<BitMessageAddress> BitMessage::createDeterministicAddresses(base64 p
     if ( !parsesuccess )
     {
         std::cerr  << "Failed to parse address list\n" << reader.getFormattedErrorMessages();
-        return addressList;
+        //return addressList;
     }
     
     const Json::Value addresses = root["addresses"];
@@ -1178,7 +1229,8 @@ std::vector<BitMessageAddress> BitMessage::createDeterministicAddresses(base64 p
         
     }
     
-    return addressList;
+    std::function<void()> secondCommand = std::bind(&BitMessage::listAddresses, this);
+    bm_queue->addToQueue(secondCommand);
 
 };
 

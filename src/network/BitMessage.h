@@ -186,8 +186,8 @@ public:
     
     std::string moduleType(){return "BitMessage";}
     
-    bool createAddress(std::string options);  // Queued
-    bool createDeterministicAddress(std::string key); // Queued
+    bool createAddress(std::string label="");  // Queued
+    bool createDeterministicAddress(std::string key, std::string label=""); // Queued
     
     bool addressAccessible(std::string address);  // Queued
     
@@ -283,8 +283,8 @@ public:
 
     // Warning - This is not guaranteed to return a filled vector if the call does not return any new addresses.
     // You must check that you are accessing a legal position in the vector first.
-    std::vector<BitMessageAddress> createDeterministicAddresses(base64 password, int numberOfAddresses=1, int addressVersionNumber=0, int streamNumber=0, bool eighteenByteRipe=false, int totalDifficulty=1, int smallMessageDifficulty=1);
-    std::vector<BitMessageAddress> createDeterministicAddresses(std::string password, int numberOfAddresses=1, int addressVersionNumber=0, int streamNumber=0, bool eighteenByteRipe=false, int totalDifficulty=1, int smallMessageDifficulty=1){return createDeterministicAddresses(base64(password), numberOfAddresses, addressVersionNumber, streamNumber, eighteenByteRipe, totalDifficulty, smallMessageDifficulty);}
+    void createDeterministicAddresses(base64 password, int numberOfAddresses=1, int addressVersionNumber=0, int streamNumber=0, bool eighteenByteRipe=false, int totalDifficulty=1, int smallMessageDifficulty=1);
+    //std::vector<BitMessageAddress> createDeterministicAddresses(std::string password, int numberOfAddresses=1, int addressVersionNumber=0, int streamNumber=0, bool eighteenByteRipe=false, int totalDifficulty=1, int smallMessageDifficulty=1){return createDeterministicAddresses(base64(password), numberOfAddresses, addressVersionNumber, streamNumber, eighteenByteRipe, totalDifficulty, smallMessageDifficulty);}
     
     BitMessageAddress getDeterministicAddress(base64 password, int addressVersionNumber=4, int streamNumber=1);
     BitMessageAddress getDeterministicAddress(std::string password, int addressVersionNumber=4, int streamNumber=1){return getDeterministicAddress(base64(password), addressVersionNumber, streamNumber);}
