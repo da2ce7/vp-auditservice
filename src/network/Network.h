@@ -100,11 +100,12 @@ public:
     
     virtual bool createAddress(std::string label=""){return false;}
     virtual bool createDeterministicAddress(std::string key, std::string label=""){return false;}
+    virtual bool deleteLocalAddress(std::string address){return false;}
     
     virtual bool addressAccessible(std::string address){return false;}  // Checks to see if an address is useable for sending messages.
     
-    virtual std::vector<std::string> getLocalAddresses(){return std::vector<std::string>();}
-    virtual std::vector<std::string> getRemoteAddresses(){return std::vector<std::string>();}
+    virtual std::vector<std::pair<std::string, std::string> > getLocalAddresses(){return std::vector<std::pair<std::string, std::string> >();}
+    virtual std::vector<std::pair<std::string, std::string> > getRemoteAddresses(){return std::vector<std::pair<std::string, std::string> >();}
     virtual bool checkLocalAddresses(){return false;} // Asks the network interface to manually check for new owned addresses.
     virtual bool checkRemoteAddresses(){return false;} // Asks the API to refresh its list of contacts.
     

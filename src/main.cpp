@@ -86,14 +86,14 @@ int main(int argc, char * argv[])
     std::cout << std::endl;
 
     // This is a bit of a more complex example, how to send mail:
-    std::cout << "Sending Message from first useable address to Echo Server" << std::endl;
-    std::vector<std::string> useableAddresses = netModule->getLocalAddresses();
+    std::cout << "Sending Message from newest useable address to Echo Server" << std::endl;
+    std::vector<std::pair<std::string, std::string> > useableAddresses = netModule->getLocalAddresses();
     if(useableAddresses.size() > 0){
-        std::string firstAddress = useableAddresses.at(0);
-        std::cout << "First Useable Address: " << firstAddress << std::endl;
+        std::pair<std::string, std::string> firstAddress = useableAddresses.back();
+        std::cout << "Newest Useable Address: " << firstAddress.second << std::endl;
         
         // BM-orkCbppXWSqPpAxnz6jnfTZ2djb5pJKDb - BitMessage Echo Server, useful for Debugging
-        NetworkMail outgoingMessage(firstAddress, "BM-orkCbppXWSqPpAxnz6jnfTZ2djb5pJKDb", "VP-AuditService Test", "Testing Echo Server");
+        NetworkMail outgoingMessage(firstAddress.second, "BM-orkCbppXWSqPpAxnz6jnfTZ2djb5pJKDb", "VP-AuditService Test", "Testing Echo Server");
         netModule->sendMail(outgoingMessage);
     }
     else{
@@ -111,9 +111,25 @@ int main(int argc, char * argv[])
         std::cout << "No Subscriptions Available" << std::endl;
     }
     
+    /*
     std::cout << "Attempting to create new address, this will take a while for the API server to process" << std::endl;
-    if(!netModule->createAddress("0")){
-        std::cout << "create address failed" << std::endl;
+    for(int x=0; x < 5; x++){
+        if(!netModule->createAddress(std::to_string(x))){
+            std::cout << "Create Address Failed" << std::endl;
+        }
+    }
+    */
+    if(useableAddresses.size() > 0){
+    
+        std::cout << "Listing Accessible Addresses" << std::endl;
+        for(int x = 0; x < useableAddresses.size(); x++){
+            std::cout << "Label: " << useableAddresses.at(x).first << " , Address: " << useableAddresses.at(x).second << std::endl;
+            if(x > 10){
+                std::cout << "Deleting Address for Cleanup: " << useableAddresses.at(x).first << " , Address: " << useableAddresses.at(x).second << std::endl;
+                netModule->deleteLocalAddress(useableAddresses.at(x).second);
+            }
+        }
+    
     }
     
     std::cout << std::endl;

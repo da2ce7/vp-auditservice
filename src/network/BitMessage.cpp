@@ -84,6 +84,8 @@ bool BitMessage::accessible(){
 
 bool BitMessage::createAddress(std::string label){
 
+    listAddresses();
+
     std::unique_lock<std::mutex> mlock(m_localIdentitiesMutex);
     
     try{
@@ -93,11 +95,6 @@ bool BitMessage::createAddress(std::string label){
             return false;
         }
     
-        if(m_localIdentities.size() == 0){
-            checkLocalAddresses();
-            mlock.unlock();
-            return false;
-        }
         
         for(int x = 0; x < m_localIdentities.size(); x++){
             if(m_localIdentities.at(x).getLabel().decoded() == label){
@@ -111,8 +108,7 @@ bool BitMessage::createAddress(std::string label){
         std::function<void()> firstCommand = std::bind(&BitMessage::createRandomAddress, this, base64(label), false, 1, 1);
         bm_queue->addToQueue(firstCommand);
     
-        std::function<void()> secondCommand = std::bind(&BitMessage::listAddresses, this);
-        bm_queue->addToQueue(secondCommand);
+        checkLocalAddresses();
         
         mlock.unlock();
         return true;
@@ -125,6 +121,8 @@ bool BitMessage::createAddress(std::string label){
 
 
 bool BitMessage::createDeterministicAddress(std::string key, std::string label){
+
+    listAddresses();
 
     std::unique_lock<std::mutex> mlock(m_localIdentitiesMutex);
 
@@ -155,8 +153,7 @@ bool BitMessage::createDeterministicAddress(std::string key, std::string label){
         std::function<void()> firstCommand = std::bind(&BitMessage::createDeterministicAddresses, this, base64(key), 1, 0, 0, false, 1, 1);
         bm_queue->addToQueue(firstCommand);
     
-        std::function<void()> secondCommand = std::bind(&BitMessage::listAddresses, this);
-        bm_queue->addToQueue(secondCommand);
+        checkLocalAddresses();
 
         mlock.unlock();
         return true;
@@ -167,6 +164,23 @@ bool BitMessage::createDeterministicAddress(std::string key, std::string label){
     }
     
 }  // Queued
+
+
+bool BitMessage::deleteLocalAddress(std::string address){
+    try{
+        
+        std::function<void()> firstCommand = std::bind(&BitMessage::deleteAddress, this, address);
+        bm_queue->addToQueue(firstCommand);
+        
+        checkLocalAddresses();
+        return true;
+        
+    }
+    catch(...){
+        return false;
+    }
+}
+
 
 bool BitMessage::addressAccessible(std::string address){
     
@@ -188,13 +202,14 @@ bool BitMessage::addressAccessible(std::string address){
     return false;
 } // Queued
 
-std::vector<std::string> BitMessage::getRemoteAddresses(){
+std::vector<std::pair<std::string, std::string> > BitMessage::getRemoteAddresses(){
     
     std::unique_lock<std::mutex> mlock(m_localAddressBookMutex);
 
-    std::vector<std::string> addresses;
+    std::vector<std::pair<std::string, std::string> > addresses;
     for(int x = 0; x < m_localAddressBook.size(); x++){
-        addresses.push_back(m_localAddressBook.at(x).getAddress());
+        std::pair<std::string, std::string> address(m_localAddressBook.at(x).getLabel().decoded(), m_localAddressBook.at(x).getAddress());
+        addresses.push_back(address);
     }
     
     mlock.unlock();
@@ -203,14 +218,15 @@ std::vector<std::string> BitMessage::getRemoteAddresses(){
 
 } // Queued
 
-std::vector<std::string> BitMessage::getLocalAddresses(){
+std::vector<std::pair<std::string, std::string> > BitMessage::getLocalAddresses(){
     
     std::unique_lock<std::mutex> mlock(m_localIdentitiesMutex);
     
-    std::vector<std::string> addresses;
+    std::vector<std::pair<std::string, std::string> > addresses;
     
     for(int x = 0; x < m_localIdentities.size(); x++){
-        addresses.push_back(m_localIdentities.at(x).getAddress());
+        std::pair<std::string, std::string> address(m_localIdentities.at(x).getLabel().decoded(), m_localIdentities.at(x).getAddress());
+        addresses.push_back(address);
     }
     
     mlock.unlock();
@@ -1373,7 +1389,7 @@ bool BitMessage::deleteAddressBookEntry(std::string address){
 };
 
 
-bool BitMessage::deleteAddress(std::string address){
+void BitMessage::deleteAddress(std::string address){
 
     Parameters params;
     params.push_back(ValueString(address));
@@ -1381,19 +1397,19 @@ bool BitMessage::deleteAddress(std::string address){
     XmlResponse result = m_xmllib->run("deleteAddress", params);
     
     if(result.first == false){
-        std::cerr << "Error: deleteAddress failed" << std::endl;
-        return false;
+        std::cerr << "Error: deleteAddress " << address << " failed" << std::endl;
+        //return false;
     }
     else if(result.second.type() == xmlrpc_c::value::TYPE_STRING){
         std::size_t found;
         found=std::string(ValueString(result.second)).find("API Error");
         if(found!=std::string::npos){
             std::cerr << std::string(ValueString(result.second)) << std::endl;
-            return false;
+            //return false;
         }
     }
     
-    return true;
+    //return true;
 
 };
 

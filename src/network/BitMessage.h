@@ -188,11 +188,12 @@ public:
     
     bool createAddress(std::string label="");  // Queued
     bool createDeterministicAddress(std::string key, std::string label=""); // Queued
+    bool deleteLocalAddress(std::string address); // Queued
     
     bool addressAccessible(std::string address);  // Queued
     
-    std::vector<std::string> getRemoteAddresses();    // Queued
-    std::vector<std::string> getLocalAddresses();    // Queued
+    std::vector<std::pair<std::string, std::string> > getRemoteAddresses();    // Queued
+    std::vector<std::pair<std::string, std::string> > getLocalAddresses();    // Queued
     bool checkLocalAddresses(); // Queued
     bool checkRemoteAddresses(); // Queued
 
@@ -296,7 +297,7 @@ public:
 
     bool deleteAddressBookEntry(std::string address);
     
-    bool deleteAddress(BitMessageAddress address);
+    void deleteAddress(BitMessageAddress address);
     
     BitDecodedAddress decodeAddress(BitMessageAddress address);
     
