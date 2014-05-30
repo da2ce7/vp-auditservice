@@ -111,6 +111,7 @@ int main(int argc, char * argv[])
         std::cout << "No Subscriptions Available" << std::endl;
     }
     
+    // Uncomment this section to test creating new addresses
     /*
     std::cout << "Attempting to create new address, this will take a while for the API server to process" << std::endl;
     for(int x=0; x < 5; x++){

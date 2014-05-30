@@ -23,7 +23,7 @@ public:
     
     bool processing();
     // Queue Managers
-    void addToQueue(std::function<void()> command);
+    void addToQueue(OT_STD_FUNCTION(void()) command);
     
     int queueSize();
     void clearQueue();
@@ -48,7 +48,7 @@ private:
     
     BitMessage *parentInterface;
     
-    MsgQueue<std::function<void()>> MasterQueue;
+    MsgQueue<OT_STD_FUNCTION(void())> MasterQueue;
      
     // Functions
     

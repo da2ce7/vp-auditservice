@@ -86,7 +86,7 @@ bool BitMessage::createAddress(std::string label){
 
     listAddresses();
 
-    std::unique_lock<std::mutex> mlock(m_localIdentitiesMutex);
+    INSTANTIATE_MLOCK(m_localIdentitiesMutex);
     
     try{
         if(label == ""){
@@ -105,7 +105,7 @@ bool BitMessage::createAddress(std::string label){
             
         }
 
-        std::function<void()> firstCommand = std::bind(&BitMessage::createRandomAddress, this, base64(label), false, 1, 1);
+        OT_STD_FUNCTION(void()) firstCommand = OT_STD_BIND(&BitMessage::createRandomAddress, this, base64(label), false, 1, 1);
         bm_queue->addToQueue(firstCommand);
     
         checkLocalAddresses();
@@ -124,7 +124,7 @@ bool BitMessage::createDeterministicAddress(std::string key, std::string label){
 
     listAddresses();
 
-    std::unique_lock<std::mutex> mlock(m_localIdentitiesMutex);
+    INSTANTIATE_MLOCK(m_localIdentitiesMutex);
 
     try{
         
@@ -150,7 +150,7 @@ bool BitMessage::createDeterministicAddress(std::string key, std::string label){
         }
         
         
-        std::function<void()> firstCommand = std::bind(&BitMessage::createDeterministicAddresses, this, base64(key), 1, 0, 0, false, 1, 1);
+        OT_STD_FUNCTION(void()) firstCommand = OT_STD_BIND(&BitMessage::createDeterministicAddresses, this, base64(key), 1, 0, 0, false, 1, 1);
         bm_queue->addToQueue(firstCommand);
     
         checkLocalAddresses();
@@ -169,7 +169,7 @@ bool BitMessage::createDeterministicAddress(std::string key, std::string label){
 bool BitMessage::deleteLocalAddress(std::string address){
     try{
         
-        std::function<void()> firstCommand = std::bind(&BitMessage::deleteAddress, this, address);
+        OT_STD_FUNCTION(void()) firstCommand = OT_STD_BIND(&BitMessage::deleteAddress, this, address);
         bm_queue->addToQueue(firstCommand);
         
         checkLocalAddresses();
@@ -184,7 +184,7 @@ bool BitMessage::deleteLocalAddress(std::string address){
 
 bool BitMessage::addressAccessible(std::string address){
     
-    std::unique_lock<std::mutex> mlock(m_localIdentitiesMutex);
+    INSTANTIATE_MLOCK(m_localIdentitiesMutex);
 
     for(int x = 0; x < m_localIdentities.size(); x++){
             if(m_localIdentities.at(x).getAddress() == address){
@@ -204,7 +204,7 @@ bool BitMessage::addressAccessible(std::string address){
 
 std::vector<std::pair<std::string, std::string> > BitMessage::getRemoteAddresses(){
     
-    std::unique_lock<std::mutex> mlock(m_localAddressBookMutex);
+    INSTANTIATE_MLOCK(m_localAddressBookMutex);
 
     std::vector<std::pair<std::string, std::string> > addresses;
     for(int x = 0; x < m_localAddressBook.size(); x++){
@@ -220,7 +220,7 @@ std::vector<std::pair<std::string, std::string> > BitMessage::getRemoteAddresses
 
 std::vector<std::pair<std::string, std::string> > BitMessage::getLocalAddresses(){
     
-    std::unique_lock<std::mutex> mlock(m_localIdentitiesMutex);
+    INSTANTIATE_MLOCK(m_localIdentitiesMutex);
     
     std::vector<std::pair<std::string, std::string> > addresses;
     
@@ -237,7 +237,7 @@ std::vector<std::pair<std::string, std::string> > BitMessage::getLocalAddresses(
 
 bool BitMessage::checkLocalAddresses(){
     try{
-        std::function<void()> command = std::bind(&BitMessage::listAddresses, this);
+        OT_STD_FUNCTION(void()) command = OT_STD_BIND(&BitMessage::listAddresses, this);
         bm_queue->addToQueue(command);
         return true;
     }
@@ -250,7 +250,7 @@ bool BitMessage::checkLocalAddresses(){
 bool BitMessage::checkRemoteAddresses(){
     
     try{
-        std::function<void()> command = std::bind(&BitMessage::listAddressBookEntries, this); // push a list address request to the queue.
+        OT_STD_FUNCTION(void()) command = OT_STD_BIND(&BitMessage::listAddressBookEntries, this); // push a list address request to the queue.
         bm_queue->addToQueue(command);
         return true;
     }
@@ -261,7 +261,7 @@ bool BitMessage::checkRemoteAddresses(){
 
 bool BitMessage::checkMail(){
     try{
-        std::function<void()> command = std::bind(&BitMessage::getAllInboxMessages, this);
+        OT_STD_FUNCTION(void()) command = OT_STD_BIND(&BitMessage::getAllInboxMessages, this);
         bm_queue->addToQueue(command);
         return true;
     }
@@ -276,7 +276,7 @@ bool BitMessage::newMailExists(std::string address){
     if(m_localInbox.size() == 0){
         getAllInboxMessages(); // Blocking call, otherwise this may cause problems.
     }
-    std::unique_lock<std::mutex> mlock(m_localInboxMutex);
+    INSTANTIATE_MLOCK(m_localInboxMutex);
 
     if(address != ""){
         for(int x=0; x<m_localInbox.size(); x++){
@@ -305,7 +305,7 @@ std::vector<NetworkMail> BitMessage::getInbox(std::string address){
     if(m_localInbox.size() == 0){
         getAllInboxMessages();  // Blocking call, otherwise this may cause problems.
     }
-    std::unique_lock<std::mutex> mlock(m_localInboxMutex);
+    INSTANTIATE_MLOCK(m_localInboxMutex);
     try{
         
         if(address != ""){
@@ -340,7 +340,7 @@ std::vector<NetworkMail> BitMessage::getUnreadMail(std::string address){
     if(m_localInbox.size() == 0){
         getAllInboxMessages();  // Blocking call, otherwise this may cause problems.
     }
-    std::unique_lock<std::mutex> mlock(m_localInboxMutex);
+    INSTANTIATE_MLOCK(m_localInboxMutex);
     try{
         
         if(address != ""){
@@ -375,14 +375,14 @@ bool BitMessage::deleteMessage(std::string messageID){
     if(m_localInbox.size() == 0){
         getAllInboxMessages();  // Blocking call, otherwise this may cause problems.
     }
-    std::unique_lock<std::mutex> mlock(m_localInboxMutex);
+    INSTANTIATE_MLOCK(m_localInboxMutex);
     for(int x=0; x<m_localInbox.size(); x++){
 
         if(m_localInbox.at(x).getMessageID() == messageID){
             m_localInbox.erase(m_localInbox.begin() + x);
         }
         try{
-            std::function<void()> command = std::bind(&BitMessage::trashMessage, this, messageID);
+            OT_STD_FUNCTION(void()) command = OT_STD_BIND(&BitMessage::trashMessage, this, messageID);
             bm_queue->addToQueue(command);
             mlock.unlock();
             return true;
@@ -404,14 +404,14 @@ bool BitMessage::markRead(std::string messageID, bool read){
         getAllInboxMessages();  // Blocking call, otherwise this may cause problems.
     }
     
-    std::unique_lock<std::mutex> mlock(m_localInboxMutex);
+    INSTANTIATE_MLOCK(m_localInboxMutex);
     for(int x=0; x<m_localInbox.size(); x++){
 
         if(m_localInbox.at(x).getMessageID() == messageID){
             m_localInbox.at(x).setRead(read);
         }
         try{
-            std::function<void()> command = std::bind(&BitMessage::getInboxMessageByID, this, messageID, read);
+            OT_STD_FUNCTION(void()) command = OT_STD_BIND(&BitMessage::getInboxMessageByID, this, messageID, read);
             bm_queue->addToQueue(command);
             mlock.unlock();
             return true;
@@ -431,7 +431,7 @@ bool BitMessage::markRead(std::string messageID, bool read){
 bool BitMessage::sendMail(NetworkMail message){
     try{
         
-        std::function<void()> command = std::bind(&BitMessage::sendMessage, this, message.getTo(), message.getFrom(), base64(message.getSubject()), base64(message.getMessage()), 2);
+        OT_STD_FUNCTION(void()) command = OT_STD_BIND(&BitMessage::sendMessage, this, message.getTo(), message.getFrom(), base64(message.getSubject()), base64(message.getMessage()), 2);
         bm_queue->addToQueue(command);
         return true;
     }
@@ -444,7 +444,7 @@ bool BitMessage::sendMail(NetworkMail message){
 
 std::vector<std::pair<std::string,std::string> > BitMessage::getSubscriptions(){
     
-    std::unique_lock<std::mutex> mlock(m_localSubscriptionListMutex);
+    INSTANTIATE_MLOCK(m_localSubscriptionListMutex);
     
     if(m_localSubscriptionList.size() == 0){
         mlock.unlock();
@@ -471,7 +471,7 @@ std::vector<std::pair<std::string,std::string> > BitMessage::getSubscriptions(){
 bool BitMessage::refreshSubscriptions(){
     
     try{
-        std::function<void()> command = std::bind(&BitMessage::listSubscriptions, this);
+        OT_STD_FUNCTION(void()) command = OT_STD_BIND(&BitMessage::listSubscriptions, this);
         bm_queue->addToQueue(command);
         return true;
     }
@@ -586,7 +586,7 @@ void BitMessage::getAllInboxMessages(){
         
     }
 
-    std::unique_lock<std::mutex> mlock(m_localInboxMutex); // Lock so that we dont have a race condition.
+    INSTANTIATE_MLOCK(m_localInboxMutex); // Lock so that we dont have a race condition.
     // Populate our local inbox.
 
     m_localInbox.clear();
@@ -990,7 +990,7 @@ void BitMessage::listSubscriptions(){
         
     }
     
-    std::unique_lock<std::mutex> mlock(m_localSubscriptionListMutex);
+    INSTANTIATE_MLOCK(m_localSubscriptionListMutex);
     m_localSubscriptionList = subscriptionList;
     mlock.unlock();
 };
@@ -1167,7 +1167,7 @@ void BitMessage::listAddresses(){
         
     }
     
-    std::unique_lock<std::mutex> mlock(m_localIdentitiesMutex);
+    INSTANTIATE_MLOCK(m_localIdentitiesMutex);
     m_localIdentities = responses;
     mlock.unlock();
     
@@ -1198,7 +1198,7 @@ void BitMessage::createRandomAddress(base64 label, bool eighteenByteRipe, int to
         }
     }
     
-    std::unique_lock<std::mutex> mlock(m_newestCreatedAddressMutex);
+    INSTANTIATE_MLOCK(m_newestCreatedAddressMutex);
     newestCreatedAddress = std::string(ValueString(result.second));
     mlock.unlock();
     
@@ -1252,7 +1252,7 @@ void BitMessage::createDeterministicAddresses(base64 password, int numberOfAddre
         
     }
     
-    std::function<void()> secondCommand = std::bind(&BitMessage::listAddresses, this);
+    OT_STD_FUNCTION(void()) secondCommand = OT_STD_BIND(&BitMessage::listAddresses, this);
     bm_queue->addToQueue(secondCommand);
 
 };
@@ -1327,7 +1327,7 @@ void BitMessage::listAddressBookEntries(){
         
     }
     
-    std::unique_lock<std::mutex> mlock(m_localAddressBookMutex);
+    INSTANTIATE_MLOCK(m_localAddressBookMutex);
     m_localAddressBook = addressBook;
     mlock.unlock();
     

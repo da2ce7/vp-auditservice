@@ -12,7 +12,7 @@ bool BitMessageQueue::start() {
 
     if(m_stop){
         m_stop = false;
-        m_thread = std::thread(&BitMessageQueue::run, this);
+        m_thread = OT_THREAD(&BitMessageQueue::run, this);
         return true;
     }
     else{
@@ -25,7 +25,7 @@ bool BitMessageQueue::start() {
 bool BitMessageQueue::stop() {
     
     if(!m_stop){
-        std::unique_lock<std::mutex> mlock(m_processing); // Don't stop the thread in the middle of processing
+        INSTANTIATE_MLOCK(m_processing); // Don't stop the thread in the middle of processing
         m_stop = true;
         m_thread.join();
         mlock.unlock();
@@ -40,12 +40,12 @@ bool BitMessageQueue::stop() {
 
 bool BitMessageQueue::processing(){
     
-    return m_working;
+    return OT_ATOMIC_ISTRUE(m_working);
     
 }
 
 
-void BitMessageQueue::addToQueue(std::function<void()> command){
+void BitMessageQueue::addToQueue(OT_STD_FUNCTION(void()) command){
     
     MasterQueue.push(command);
     
@@ -76,11 +76,11 @@ bool BitMessageQueue::parseNextMessage(){
         return false;
     }
     
-    std::unique_lock<std::mutex> mlock(m_processing);  // Don't let other functions interfere with our message parsing
+    INSTANTIATE_MLOCK(m_processing);  // Don't let other functions interfere with our message parsing
     
 //    m_working = true; // Notify our atomic boolean that we are in the middle of a process
     
-    std::function<void()> message = MasterQueue.pop();  // Pull out our function to run
+    OT_STD_FUNCTION(void()) message = MasterQueue.pop();  // Pull out our function to run
     
     message();
     
