@@ -14,7 +14,7 @@ public:
     
     T pop()
     {
-        std::unique_lock<std::mutex> mlock(mutex_);
+        INSTANTIATE_MLOCK(mutex_);
         while (queue_.empty())
         {
             cond_.wait(mlock);
@@ -23,10 +23,10 @@ public:
         queue_.pop();
         return item;
     }
-
+    
     void pop(T& item)
     {
-        std::unique_lock<std::mutex> mlock(mutex_);
+        INSTANTIATE_MLOCK(mutex_);
         while (queue_.empty())
         {
             cond_.wait(mlock);
@@ -37,7 +37,7 @@ public:
     
     void push(const T& item)
     {
-        std::unique_lock<std::mutex> mlock(mutex_);
+        INSTANTIATE_MLOCK(mutex_);
         queue_.push(item);
         mlock.unlock();
         cond_.notify_one();
@@ -55,7 +55,7 @@ public:
     
     int size()
     {
-        std::unique_lock<std::mutex> mlock(mutex_);
+        INSTANTIATE_MLOCK(mutex_);
         int size = queue_.size();
         mlock.unlock();
         return size;
@@ -63,7 +63,7 @@ public:
     
     void clear()
     {
-        std::unique_lock<std::mutex> mlock(mutex_);
+        INSTANTIATE_MLOCK(mutex_);
         while(!queue_.empty())
             queue_.pop();
         mlock.unlock();
@@ -71,6 +71,6 @@ public:
     
 private:
     std::queue<T> queue_;
-    std::mutex mutex_;
-    std::condition_variable cond_;
+    OT_MUTEX(mutex_);
+    CONDITION_VARIABLE(cond_);
 };

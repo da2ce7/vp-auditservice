@@ -1,11 +1,11 @@
 #pragma once
 //
 //  BitMessageQueue.h
-//  
+//
 #include "BitMessage.h"
 
-#include <mutex>
-#include <condition_variable>
+//#include <mutex>
+//#include <condition_variable>
 
 class BitMessage;
 
@@ -33,23 +33,23 @@ public:
     
 protected:
     
-    std::atomic<bool> m_stop;  
+    OT_ATOMIC(m_stop);
     void run(){ while(!m_stop){parseNextMessage();} }; // Obviously this will be our message parsing loop
     
 private:
     
     // Variables
     
-    std::thread m_thread;
-    std::mutex m_processing;
-    std::condition_variable m_conditional;
+    OT_THREAD m_thread;
+    OT_MUTEX(m_processing);
+    CONDITION_VARIABLE(m_conditional);
     
-    std::atomic<bool> m_working;
+    OT_ATOMIC(m_working);
     
     BitMessage *parentInterface;
     
     MsgQueue<OT_STD_FUNCTION(void())> MasterQueue;
-     
+    
     // Functions
     
     bool parseNextMessage();
