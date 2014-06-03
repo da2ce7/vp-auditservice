@@ -71,14 +71,14 @@ int main(int argc, char * argv[])
     int debugAddressInboxSize = netModule->getInbox("BM-2cXRVEbV9q3p1v6EDBH5jhm21h2MWLNaTa").size();
     std::cout << "Inbox Size for \"BM-2cXRVEbV9q3p1v6EDBH5jhm21h2MWLNaTa\" is : " << debugAddressInboxSize << " messages." << std::endl;
     if(debugAddressInboxSize > 0){
-        std::cout << "Subject of first message for \"BM-2cXRVEbV9q3p1v6EDBH5jhm21h2MWLNaTa\": " << netModule->getInbox("BM-2cXRVEbV9q3p1v6EDBH5jhm21h2MWLNaTa").at(0).getSubject() << std::endl;
+        std::cout << "Subject of first message for \"BM-2cXRVEbV9q3p1v6EDBH5jhm21h2MWLNaTa\": " << netModule->getInbox("BM-2cXRVEbV9q3p1v6EDBH5jhm21h2MWLNaTa").at(0)->getSubject() << std::endl;
     }
     
        
     int debugUnreadInboxSize = netModule->getAllUnreadMail().size();
     std::cout << "Number of unread messages in the inbox: " << debugUnreadInboxSize << std::endl;
     if(debugUnreadInboxSize > 0){
-        std::cout << "First unread message: " << std::endl << std::endl << netModule->getAllUnreadMail().at(0).getMessage() << std::endl;
+        std::cout << "First unread message: " << std::endl << std::endl << netModule->getAllUnreadMail().at(0)->getMessage() << std::endl;
     }
     
     
@@ -110,6 +110,8 @@ int main(int argc, char * argv[])
     {
         std::cout << "No Subscriptions Available" << std::endl;
     }
+    std::cout << std::endl;
+
     
     // Uncomment this section to test creating new addresses
     /*
@@ -120,6 +122,18 @@ int main(int argc, char * argv[])
         }
     }
     */
+    
+    std::cerr << "Getting Outbox" << std::endl;
+    int receivedCount;
+    for(int x = 0; x < netModule->getOutbox().size(); x++){
+        if(netModule->getOutbox().at(x)->getRead()){
+            receivedCount++;
+        }
+    }
+    std::cerr << receivedCount << " messages have been acknowledged as received by sender" << std::endl;
+    std::cout << std::endl;
+
+    
     if(useableAddresses.size() > 0){
     
         std::cout << "Listing Accessible Addresses" << std::endl;

@@ -13,6 +13,8 @@
 #include "WorkQueue.h"
 #include "MsgQueue.h"
 #include "BitMessageQueue.h"
+#include "TR1_Wrapper.hpp"
+
 
 typedef std::string BitMessageAddress;
 
@@ -200,10 +202,12 @@ public:
     bool checkMail(); // Asks the network interface to manually check for messages // Queued
     bool newMailExists(std::string address=""); // checks for new mail, returns true if there is new mail in the queue. // "Queued", will queue new mail request if inbox is empty.
     
-    std::vector<NetworkMail> getInbox(std::string address=""); // No queueing, if no inbox exists (which shouldn't happen), it will block until one is returned by the api server.
-    std::vector<NetworkMail> getAllInboxes();  // Implemented as passthrough function
-    std::vector<NetworkMail> getUnreadMail(std::string address);
-    std::vector<NetworkMail> getAllUnreadMail();
+    std::vector<_SharedPtr<NetworkMail> > getInbox(std::string address=""); // No queueing, if no inbox exists (which shouldn't happen), it will block until one is returned by the api server.
+    std::vector<_SharedPtr<NetworkMail> > getAllInboxes();  // Implemented as passthrough function
+    std::vector<_SharedPtr<NetworkMail> > getOutbox(std::string address="");
+    std::vector<_SharedPtr<NetworkMail> > getAllOutboxes(); // Implemented as passthrough function
+    std::vector<_SharedPtr<NetworkMail> > getUnreadMail(std::string address);
+    std::vector<_SharedPtr<NetworkMail> > getAllUnreadMail();
     
     bool deleteMessage(std::string messageID); // Any part of the message should be able to be used to delete it from an inbox    // Queued
     bool markRead(std::string messageID, bool read=true); // By default this marks a given message as read or not, not all API's will support this and should thus return false.  // Queued
@@ -233,7 +237,7 @@ public:
     
     void getInboxMessageByID(std::string msgID, bool setRead=true);
     
-    BitMessageOutbox getAllSentMessages();
+    void getAllSentMessages();
     
     BitSentMessage getSentMessageByID(std::string msgID);
     
@@ -371,13 +375,13 @@ private:
     BitMessageAddressBook m_localAddressBook;   // Remote user addresses.
     
     OT_MUTEX(m_localInboxMutex);
-    std::vector<NetworkMail> m_localInbox;
+    std::vector<_SharedPtr<NetworkMail> > m_localInbox;
     BitMessageInbox m_localUnformattedInbox; // Necessary for doing operations on BitMessage-specific messages
     OT_ATOMIC(m_newMailExists);
     
     OT_MUTEX(m_localOutboxMutex);
-    std::vector<NetworkMail> m_localOutbox;
-    BitMessageInbox m_localUnformattedOutbox; // Necessary for doing operations on BitMessage-specific messages
+    std::vector<_SharedPtr<NetworkMail> > m_localOutbox;
+    BitMessageOutbox m_localUnformattedOutbox; // Necessary for doing operations on BitMessage-specific messages
     
     OT_MUTEX(m_localSubscriptionListMutex);
     BitMessageSubscriptionList m_localSubscriptionList;

@@ -5,7 +5,6 @@
 #include "BitMessage.h"
 #include "json/json.h"
 #include "base64.h"
-#include "VectorHelp.h"
 
 #include <string>
 #include <iostream>
@@ -261,8 +260,10 @@ bool BitMessage::checkRemoteAddresses(){
 
 bool BitMessage::checkMail(){
     try{
-        OT_STD_FUNCTION(void()) command = OT_STD_BIND(&BitMessage::getAllInboxMessages, this);
-        bm_queue->addToQueue(command);
+        OT_STD_FUNCTION(void()) getInboxMessages = OT_STD_BIND(&BitMessage::getAllInboxMessages, this);
+        bm_queue->addToQueue(getInboxMessages);
+        OT_STD_FUNCTION(void()) getSentMessages = OT_STD_BIND(&BitMessage::getAllSentMessages, this);
+        bm_queue->addToQueue(getSentMessages);
         return true;
     }
     catch(...){
@@ -281,7 +282,7 @@ bool BitMessage::newMailExists(std::string address){
     if(address != ""){
         for(int x=0; x<m_localInbox.size(); x++){
             
-            if(m_localInbox.at(x).getTo() == address && m_localInbox.at(x).getRead() == false){
+            if(m_localInbox.at(x)->getTo() == address && m_localInbox.at(x)->getRead() == false){
                 mlock.unlock();
                 return true;
             }
@@ -289,7 +290,7 @@ bool BitMessage::newMailExists(std::string address){
     }
     else{
         for(int x = 0; x < m_localInbox.size(); x++){
-            if(m_localInbox.at(x).getRead() == false){
+            if(m_localInbox.at(x)->getRead() == false){
                 mlock.unlock();
                 return true;
             }
@@ -300,7 +301,7 @@ bool BitMessage::newMailExists(std::string address){
     
 }
 
-std::vector<NetworkMail> BitMessage::getInbox(std::string address){
+std::vector<_SharedPtr<NetworkMail> > BitMessage::getInbox(std::string address){
     
     if(m_localInbox.size() == 0){
         getAllInboxMessages();  // Blocking call, otherwise this may cause problems.
@@ -309,9 +310,9 @@ std::vector<NetworkMail> BitMessage::getInbox(std::string address){
     try{
         
         if(address != ""){
-            std::vector<NetworkMail> inboxForAddress;
+            std::vector<_SharedPtr<NetworkMail> > inboxForAddress;
             for(int x=0; x<m_localInbox.size(); x++){
-                if(m_localInbox.at(x).getTo() == address)
+                if(m_localInbox.at(x)->getTo() == address)
                     inboxForAddress.push_back(m_localInbox.at(x));
             }
             mlock.unlock();
@@ -324,18 +325,53 @@ std::vector<NetworkMail> BitMessage::getInbox(std::string address){
     }
     catch(...){
         mlock.unlock();
-        return std::vector<NetworkMail>();
+        return std::vector<_SharedPtr<NetworkMail> >();
     }
     mlock.unlock();
-    return std::vector<NetworkMail>();
+    return std::vector<_SharedPtr<NetworkMail> >();
     
 }
 
-std::vector<NetworkMail> BitMessage::getAllInboxes(){return getInbox("");} // Note that this is just a passthrough way of calling getInbox() to adhere to the interface.
+std::vector<_SharedPtr<NetworkMail> > BitMessage::getAllInboxes(){return getInbox("");} // Note that this is just a passthrough way of calling getInbox() to adhere to the interface.
 
-std::vector<NetworkMail> BitMessage::getUnreadMail(std::string address){
+std::vector<_SharedPtr<NetworkMail> > BitMessage::getOutbox(std::string address){
     
-    std::vector<NetworkMail> unreadMail;
+    if(m_localOutbox.size() == 0){
+        getAllSentMessages();  // Blocking call, otherwise this may cause problems.
+    }
+    INSTANTIATE_MLOCK(m_localOutboxMutex);
+    try{
+        
+        if(address != ""){
+            std::vector<_SharedPtr<NetworkMail> > outboxForAddress;
+            for(int x=0; x<m_localOutbox.size(); x++){
+                if(m_localOutbox.at(x)->getTo() == address)
+                    outboxForAddress.push_back(m_localOutbox.at(x));
+            }
+            mlock.unlock();
+            return outboxForAddress;
+        }
+        else{
+            mlock.unlock();
+            return m_localOutbox;
+        }
+    }
+    catch(...){
+        mlock.unlock();
+        return std::vector<_SharedPtr<NetworkMail> >();
+    }
+    mlock.unlock();
+    return std::vector<_SharedPtr<NetworkMail> >();
+    
+}
+
+std::vector<_SharedPtr<NetworkMail> > BitMessage::getAllOutboxes(){
+    return getOutbox("");
+}
+
+std::vector<_SharedPtr<NetworkMail> > BitMessage::getUnreadMail(std::string address){
+    
+    std::vector<_SharedPtr<NetworkMail> > unreadMail;
     
     if(m_localInbox.size() == 0){
         getAllInboxMessages();  // Blocking call, otherwise this may cause problems.
@@ -345,7 +381,7 @@ std::vector<NetworkMail> BitMessage::getUnreadMail(std::string address){
         
         if(address != ""){
             for(int x=0; x<m_localInbox.size(); x++){
-                if(m_localInbox.at(x).getTo() == address && m_localInbox.at(x).getRead() == false)
+                if(m_localInbox.at(x)->getTo() == address && m_localInbox.at(x)->getRead() == false)
                     unreadMail.push_back(m_localInbox.at(x));
             }
             mlock.unlock();
@@ -353,7 +389,7 @@ std::vector<NetworkMail> BitMessage::getUnreadMail(std::string address){
         }
         else{
             for(int x=0; x<m_localInbox.size(); x++){
-                if(m_localInbox.at(x).getRead() == false)
+                if(m_localInbox.at(x)->getRead() == false)
                     unreadMail.push_back(m_localInbox.at(x));
             }
             mlock.unlock();
@@ -368,7 +404,7 @@ std::vector<NetworkMail> BitMessage::getUnreadMail(std::string address){
     return unreadMail;
 }
 
-std::vector<NetworkMail> BitMessage::getAllUnreadMail(){return getUnreadMail("");} // Note that this is just a passthrough way of calling getUnreadMail() to adhere to the interface.
+std::vector<_SharedPtr<NetworkMail> > BitMessage::getAllUnreadMail(){return getUnreadMail("");} // Note that this is just a passthrough way of calling getUnreadMail() to adhere to the interface.
 
 bool BitMessage::deleteMessage(std::string messageID){
     
@@ -378,7 +414,7 @@ bool BitMessage::deleteMessage(std::string messageID){
     INSTANTIATE_MLOCK(m_localInboxMutex);
     for(int x=0; x<m_localInbox.size(); x++){
         
-        if(m_localInbox.at(x).getMessageID() == messageID){
+        if(m_localInbox.at(x)->getMessageID() == messageID){
             m_localInbox.erase(m_localInbox.begin() + x);
         }
         try{
@@ -407,8 +443,8 @@ bool BitMessage::markRead(std::string messageID, bool read){
     INSTANTIATE_MLOCK(m_localInboxMutex);
     for(int x=0; x<m_localInbox.size(); x++){
         
-        if(m_localInbox.at(x).getMessageID() == messageID){
-            m_localInbox.at(x).setRead(read);
+        if(m_localInbox.at(x)->getMessageID() == messageID){
+            m_localInbox.at(x)->setRead(read);
         }
         try{
             OT_STD_FUNCTION(void()) command = OT_STD_BIND(&BitMessage::getInboxMessageByID, this, messageID, read);
@@ -593,7 +629,7 @@ void BitMessage::getAllInboxMessages(){
     m_localUnformattedInbox.clear();
     for(int x=0; x<inbox.size(); x++){
         m_localUnformattedInbox.push_back(inbox.at(x));
-        NetworkMail l_mail(inbox.at(x).getFromAddress(), inbox.at(x).getToAddress(), inbox.at(x).getSubject().decoded(), inbox.at(x).getMessage().decoded(), inbox.at(x).getRead(), inbox.at(x).getMessageID(), inbox.at(x).getReceivedTime() );
+        _SharedPtr<NetworkMail> l_mail( new NetworkMail(inbox.at(x).getFromAddress(), inbox.at(x).getToAddress(), inbox.at(x).getSubject().decoded(), inbox.at(x).getMessage().decoded(), inbox.at(x).getRead(), inbox.at(x).getMessageID(), inbox.at(x).getReceivedTime() ));
         
         m_localInbox.push_back(l_mail);
     }
@@ -653,29 +689,37 @@ void BitMessage::getInboxMessageByID(std::string msgID, bool setRead){
 };
 
 
-BitMessageOutbox BitMessage::getAllSentMessages(){
+void BitMessage::getAllSentMessages(){
     
     Parameters params;
-    BitMessageOutbox outbox;
     
     XmlResponse result = m_xmllib->run("getAllSentMessages", params);
     
     if(result.first == false){
         std::cerr << "Error: getAllSentMessages failed" << std::endl;;
-        return outbox;
+        //return outbox;
     }
     else if(result.second.type() == xmlrpc_c::value::TYPE_STRING){
         std::size_t found;
         found=std::string(ValueString(result.second)).find("API Error");
         if(found!=std::string::npos){
             std::cerr << std::string(ValueString(result.second)) << std::endl;
-            BitInboxMessage message("", "", "", base64(""), base64(""), 0, 0, false);
-            return outbox;
+            //return outbox;
         }
     }
     
     Json::Value root;
     Json::Reader reader;
+    
+    bool parsesuccess = reader.parse( ValueString(result.second), root );
+    if ( !parsesuccess )
+    {
+        std::cerr  << "Failed to parse outbox\n" << reader.getFormattedErrorMessages();
+    }
+    
+    INSTANTIATE_MLOCK(m_localOutboxMutex);
+    
+    m_localOutbox.empty();
     
     const Json::Value sentMessages = root["sentMessages"];
     for ( int index = 0; index < sentMessages.size(); ++index ){  // Iterates over the sequence elements.
@@ -685,13 +729,27 @@ BitMessageOutbox BitMessage::getAllSentMessages(){
         dirtyMessage.erase(std::remove(dirtyMessage.begin(), dirtyMessage.end(), '\n'), dirtyMessage.end());
         base64 cleanMessage(dirtyMessage, true);
         
-        BitSentMessage message(sentMessages[index].get("msgid", "").asString(), sentMessages[index].get("toAddress", "").asString(), sentMessages[index].get("fromAddress", "").asString(), base64(sentMessages[index].get("subject", "").asString(), true), cleanMessage, sentMessages[index].get("encodingType", 0).asInt(), std::atoi(sentMessages[index].get("lastActionTime", 0).asString().c_str()), sentMessages[index].get("status", false).asString(), sentMessages[index].get("ackData", false).asString());
+        BitSentMessage message(sentMessages[index].get("msgid", "").asString(), sentMessages[index].get("toAddress", "").asString(), sentMessages[index].get("fromAddress", "").asString(), base64(sentMessages[index].get("subject", "").asString(), true), cleanMessage, sentMessages[index].get("encodingType", 0).asInt(), sentMessages[index].get("lastActionTime", 0).asInt(), sentMessages[index].get("status", false).asString(), sentMessages[index].get("ackData", false).asString());
+                
+        m_localUnformattedOutbox.push_back(message);
         
-        outbox.push_back(message);
+        // Get read status from status
+        bool received;
+        if(message.getStatus() == "ackreceived"){
+            received = true;
+        }
+        else{
+            received = false;
+        }
+        
+        _SharedPtr<NetworkMail> outMessage(new NetworkMail(message.getFromAddress(), message.getToAddress(), message.getSubject().decoded(), message.getMessage().decoded(), received, message.getMessageID(), 0, message.getLastActionTime()));
+        
+        m_localOutbox.push_back(outMessage);
         
     }
     
-    return outbox;
+    std::reverse(m_localOutbox.begin(), m_localOutbox.end());  // New messages at the front
+    mlock.unlock();
     
 };
 
@@ -1605,6 +1663,7 @@ void BitMessage::initializeUserData(){
     listAddresses(); // Populates Local Owned Addresses
     listAddressBookEntries();  // Populates address book data, for remote users we have addresses for.
     getAllInboxMessages();
+    getAllSentMessages();
     listSubscriptions();
     
 }
