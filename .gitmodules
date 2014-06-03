@@ -4,3 +4,6 @@
 [submodule "submodules/ServerCore"]
 	path = submodules/ServerCore
 	url = https://github.com/monetas/ServerCore
+[submodule "submodules/libbmwrapper"]
+	path = submodules/libbmwrapper
+	url = git://github.com/yamamushi/libbmwrapper

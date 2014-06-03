@@ -5,15 +5,22 @@
 # This build script is subject to frequent changes.
 #
 #
-
+import os
+import os.path
 
 env = Environment()
 
 
 env.ParseConfig( 'xmlrpc-c-config c++2 client --cflags --libs' )
-env.Append(CPPPATH = ['/usr/local/include/','src','src/crypto','src/parsers','src/parsers/jsoncpp','src/network','src/otlib/','src/queue','src/util'])
-env.Append(LIBPATH = ['/usr/local/lib/'])
-env.Append(LIBS = ['xmlrpc_client++','boost_system','boost_program_options'])
+
+submodulesDirList = list()
+submoduleDir = 'submodules'
+for dirName, subdirList, fileList in os.walk(submoduleDir):
+    submodulesDirList.append(dirName)
+
+env.Append(CPPPATH = [submodulesDirList,'/usr/local/include/','src','src/crypto','src/parsers','src/parsers/jsoncpp','src/network','src/otlib/','src/queue','src/util'])
+env.Append(LIBPATH = [submodulesDirList,'/usr/local/lib/'])
+env.Append(LIBS = ['xmlrpc_client++','boost_system','boost_program_options','bmwrapper'])
 #env.Append(CXXFLAGS = ['-std=c++11','-stdlib=libc++'])
 env.Append(CXXFLAGS = ['-std=c++11'])
 
@@ -24,9 +31,7 @@ env.Append(CXXFLAGS = ['-std=c++11'])
 sources = Split("""
 src/parsers/MainConfigParser.cpp
 src/parsers/jsoncpp/jsoncpp.cpp
-src/queue/BitMessageQueue.cpp
 src/network/Network.cpp
-src/network/BitMessage.cpp
 src/network/XmlRPC.cpp
 src/crypto/base64.cpp
 src/main.cpp
