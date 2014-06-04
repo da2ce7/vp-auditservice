@@ -10,6 +10,8 @@
 
 #include "Network.h"
 
+const std::string g_versionString("Auditor 0.0.0");
+
 class MainConfigParser {
     
 public:

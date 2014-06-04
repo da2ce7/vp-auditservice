@@ -5,7 +5,6 @@
 
 
 #include "MainConfigParser.h"
-#include "constants.h"
 #include "BitMessage.h"
 
 #include <boost/filesystem.hpp>
